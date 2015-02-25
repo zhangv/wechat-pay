@@ -52,7 +52,7 @@ class WechatPay {
         $data["trade_type"]   = self::TRADETYPE_JSAPI;
 	    $data["openid"]   = $openid;
 	    $result = $this->unifiedOrder($data);
-        if ($result["return_code"] == "SUCCESS") {
+		if ($result["return_code"] == "SUCCESS") {
             return $result["prepay_id"];
         } else {
             $this->error = $result["return_msg"];
@@ -61,7 +61,7 @@ class WechatPay {
     }
 
 	/**
-	 * 扫码支付获取支付二维码
+	 * 扫码支付(模式二)获取支付二维码
 	 * @param $body
 	 * @param $out_trade_no
 	 * @param $total_fee
@@ -246,8 +246,7 @@ class WechatPay {
     private function post($url, $data) {
         $data["sign"] = $this->sign($data);
 		$xml = $this->array2xml($data);
-	    \Logger::addDebug($xml);
-        $ch = curl_init();
+	    $ch = curl_init();
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($ch, CURLOPT_POST, 1);
@@ -256,7 +255,6 @@ class WechatPay {
         curl_setopt($ch, CURLOPT_URL, $url);
         $content = curl_exec($ch);
         $array = $this->xml2array($content);
-
         return $array;
     }
 
@@ -293,7 +291,7 @@ class WechatPay {
     }
 
     private function get_nonce_string() {
-        return str_shuffle("abcdefghijklmnopqrstuvwxyz0123456789");
+        return substr(str_shuffle("abcdefghijklmnopqrstuvwxyz0123456789"),0,32);
     }
 
 }
