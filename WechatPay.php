@@ -10,12 +10,16 @@ class WechatPay {
      */
     private $_config;
 
-    /**
-     * 错误信息
-     */
-    public $error = null;
+	/**
+	 * 错误信息
+	 */
+	public $error = null;
+	/**
+	 * 错误信息XML
+	 */
+	public $errorXML = null;
 
-    const URL_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder",
+	const URL_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder",
 	    URL_ORDERQUERY = "https://api.mch.weixin.qq.com/pay/orderquery",
 		URL_CLOSEORDER = 'https://api.mch.weixin.qq.com/pay/closeorder',
 		URL_REFUND = 'https://api.mch.weixin.qq.com/secapi/pay/refund',
@@ -56,6 +60,7 @@ class WechatPay {
             return $result["prepay_id"];
         } else {
             $this->error = $result["return_msg"];
+			$this->errorXML = $this->array2xml($result);
             return null;
         }
     }
@@ -95,7 +100,7 @@ class WechatPay {
 		$data = [];
 		$data["appid"] = $this->_config["appid"];
 		$data["mch_id"] = $this->_config["mch_id"];
-	    $data["device_info"] = isset($params['device_info'])?$params['device_info']:null;
+	    $data["device_info"] = (isset($params['device_info'])&&trim($params['device_info'])!='')?$params['device_info']:null;
 		$data["nonce_str"] = $this->get_nonce_string();
 		$data["body"] = $params['body'];
 		$data["detail"] = isset($params['detail'])?$params['detail']:null;//optional
@@ -228,7 +233,8 @@ class WechatPay {
 	private function array2xml($array) {
         $xml = "<xml>" . PHP_EOL;
         foreach ($array as $k => $v) {
-            $xml .= "<$k><![CDATA[$v]]></$k>" . PHP_EOL;
+	        if($v && trim($v)!='')
+                $xml .= "<$k><![CDATA[$v]]></$k>" . PHP_EOL;
         }
         $xml .= "</xml>";
         return $xml;
@@ -236,10 +242,15 @@ class WechatPay {
 
 	private function xml2array($xml) {
         $array = array();
-        foreach ((array) simplexml_load_string($xml) as $k => $v) {
-            $array[$k] = (string) $v;
-        }
-
+		$tmp = null;
+		try{
+			$tmp = (array) simplexml_load_string($xml);
+		}catch(Exception $e){}
+		if($tmp && is_array($tmp)){
+			foreach ( $tmp as $k => $v) {
+				$array[$k] = (string) $v;
+			}
+		}
         return $array;
     }
 
@@ -253,8 +264,10 @@ class WechatPay {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_URL, $url);
+	    error_log($xml);
         $content = curl_exec($ch);
-        $array = $this->xml2array($content);
+	    error_log($content);
+	    $array = $this->xml2array($content);
         return $array;
     }
 
@@ -267,11 +280,12 @@ class WechatPay {
         ksort($data);
         $string1 = "";
         foreach ($data as $k => $v) {
-            if ($v) {
+            if ($v && trim($v)!='') {
                 $string1 .= "$k=$v&";
             }
         }
 	    $stringSignTemp = $string1 . "key=" . $this->_config["key"];
+	    error_log("signstr:$stringSignTemp");
 	    $sign = strtoupper(md5($stringSignTemp));
 	    return $sign;
     }
