@@ -4,9 +4,12 @@ class WechatPay {
 	const TRADETYPE_JSAPI = 'JSAPI',TRADETYPE_NATIVE = 'NATIVE',TRADETYPE_APP = 'APP';
     /**
      * 微信支付配置数组
-     * appid    公众账号
-     * mch_id   商户号
-     * apikey   加密key
+     * appid        公众账号appid
+     * mch_id       商户号
+     * apikey       加密key
+     * appsecret    公众号appsecret
+     * sslcertPath  证书路径(apiclient_cert.pem)
+     * sslkeyPath   密钥路径(apiclient_key.pem)
      */
     private $_config;
 
@@ -19,15 +22,15 @@ class WechatPay {
 	 */
 	public $errorXML = null;
 
-	const URL_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder",
-	    URL_ORDERQUERY = "https://api.mch.weixin.qq.com/pay/orderquery",
-		URL_CLOSEORDER = 'https://api.mch.weixin.qq.com/pay/closeorder',
-		URL_REFUND = 'https://api.mch.weixin.qq.com/secapi/pay/refund',
-		URL_REFUNDQUERY = 'https://api.mch.weixin.qq.com/pay/refundquery',
-		URL_DOWNLOADBILL = 'https://api.mch.weixin.qq.com/pay/downloadbill',
-		URL_REPORT = 'https://api.mch.weixin.qq.com/payitil/report',
-		URL_SHORTURL = 'https://api.mch.weixin.qq.com/tools/shorturl',
-		URL_MICROPAY = 'https://api.mch.weixin.qq.com/pay/micropay';
+	const URL_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder";
+	const URL_ORDERQUERY = "https://api.mch.weixin.qq.com/pay/orderquery";
+	const URL_CLOSEORDER = 'https://api.mch.weixin.qq.com/pay/closeorder';
+	const URL_REFUND = 'https://api.mch.weixin.qq.com/secapi/pay/refund';
+	const URL_REFUNDQUERY = 'https://api.mch.weixin.qq.com/pay/refundquery';
+	const URL_DOWNLOADBILL = 'https://api.mch.weixin.qq.com/pay/downloadbill';
+	const URL_REPORT = 'https://api.mch.weixin.qq.com/payitil/report';
+	const URL_SHORTURL = 'https://api.mch.weixin.qq.com/tools/shorturl';
+	const URL_MICROPAY = 'https://api.mch.weixin.qq.com/pay/micropay';
 
     /**
      * @param $config 微信支付配置数组
@@ -318,10 +321,7 @@ class WechatPay {
 		    curl_setopt($ch,CURLOPT_SSLKEYTYPE,'PEM');
 		    curl_setopt($ch,CURLOPT_SSLKEY, $this->_config['sslkeyPath']);
 	    }
-
-	    error_log($xml);
-        $content = curl_exec($ch);
-	    error_log(print_r($content,true));
+	    $content = curl_exec($ch);
 	    $array = $this->xml2array($content);
         return $array;
     }
@@ -340,7 +340,6 @@ class WechatPay {
             }
         }
 	    $stringSignTemp = $string1 . "key=" . $this->_config["apikey"];
-	    error_log("signstr:$stringSignTemp");
 	    $sign = strtoupper(md5($stringSignTemp));
 	    return $sign;
     }
