@@ -4,9 +4,9 @@ class WechatPay {
 	const TRADETYPE_JSAPI = 'JSAPI',TRADETYPE_NATIVE = 'NATIVE',TRADETYPE_APP = 'APP';
     /**
      * 微信支付配置数组
-     * appid  公众账号
-     * mch_id 商户号
-     * key    加密key
+     * appid    公众账号
+     * mch_id   商户号
+     * apikey   加密key
      */
     private $_config;
 
@@ -153,6 +153,53 @@ class WechatPay {
 	}
 
 	/**
+	 * 申请退款 - 使用商户订单号
+	 * @param $out_trade_no 商户订单号
+	 * @param $out_refund_no 退款单号
+	 * @param $total_fee 总金额（单位：分）
+	 * @param $refund_fee 退款金额（单位：分）
+	 * $param $op_user_id 操作员账号
+	 * @return array
+	 */
+	public function refund($out_trade_no,$out_refund_no,$total_fee,$refund_fee,$op_user_id){
+		$data = [];
+		$data["appid"] = $this->_config["appid"];
+		$data["mch_id"] = $this->_config["mch_id"];
+		$data["nonce_str"] = $this->get_nonce_string();
+		$data["out_trade_no"] = $out_trade_no;
+		$data["out_refund_no"] = $out_refund_no;
+		$data["total_fee"] = $total_fee;
+		$data["refund_fee"] = $refund_fee;
+		$data["op_user_id"] = $op_user_id;
+		$result = $this->post(self::URL_REFUND, $data,true);
+
+		return $result;
+	}
+
+	/**
+	 * 申请退款 - 使用微信订单号
+	 * @param $out_trade_no 商户订单号
+	 * @param $out_refund_no 退款单号
+	 * @param $total_fee 总金额（单位：分）
+	 * @param $refund_fee 退款金额（单位：分）
+	 * $param $op_user_id 操作员账号
+	 * @return array
+	 */
+	public function refundByTransId($transaction_id,$out_refund_no,$total_fee,$refund_fee,$op_user_id){
+		$data = [];
+		$data["appid"] = $this->_config["appid"];
+		$data["mch_id"] = $this->_config["mch_id"];
+		$data["nonce_str"] = $this->get_nonce_string();
+		$data["transaction_id"] = $transaction_id;
+		$data["out_refund_no"] = $out_refund_no;
+		$data["total_fee"] = $total_fee;
+		$data["refund_fee"] = $refund_fee;
+		$data["op_user_id"] = $op_user_id;
+		$result = $this->post(self::URL_REFUND, $data,true);
+		return $result;
+	}
+
+	/**
 	 * 下载对账单
 	 * @param $bill_date 下载对账单的日期，格式：20140603
 	 * @param $bill_type 类型
@@ -254,7 +301,7 @@ class WechatPay {
         return $array;
     }
 
-    private function post($url, $data) {
+    private function post($url, $data,$cert = false) {
         $data["sign"] = $this->sign($data);
 		$xml = $this->array2xml($data);
 	    $ch = curl_init();
@@ -264,9 +311,17 @@ class WechatPay {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_URL, $url);
+	    if($cert == true){
+		    //使用证书：cert 与 key 分别属于两个.pem文件
+		    curl_setopt($ch,CURLOPT_SSLCERTTYPE,'PEM');
+		    curl_setopt($ch,CURLOPT_SSLCERT, $this->_config['sslcertPath']);
+		    curl_setopt($ch,CURLOPT_SSLKEYTYPE,'PEM');
+		    curl_setopt($ch,CURLOPT_SSLKEY, $this->_config['sslkeyPath']);
+	    }
+
 	    error_log($xml);
         $content = curl_exec($ch);
-	    error_log($content);
+	    error_log(print_r($content,true));
 	    $array = $this->xml2array($content);
         return $array;
     }
@@ -284,7 +339,7 @@ class WechatPay {
                 $string1 .= "$k=$v&";
             }
         }
-	    $stringSignTemp = $string1 . "key=" . $this->_config["key"];
+	    $stringSignTemp = $string1 . "key=" . $this->_config["apikey"];
 	    error_log("signstr:$stringSignTemp");
 	    $sign = strtoupper(md5($stringSignTemp));
 	    return $sign;
