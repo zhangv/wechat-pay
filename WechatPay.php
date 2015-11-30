@@ -227,7 +227,7 @@ class WechatPay {
 	 * @param $out_refund_no 退款单号
 	 * @param $total_fee 总金额（单位：分）
 	 * @param $refund_fee 退款金额（单位：分）
-	 * $param $op_user_id 操作员账号
+	 * @param $op_user_id 操作员账号
 	 * @return array
 	 */
 	public function refund($out_trade_no,$out_refund_no,$total_fee,$refund_fee,$op_user_id){
@@ -251,7 +251,7 @@ class WechatPay {
 	 * @param $out_refund_no 退款单号
 	 * @param $total_fee 总金额（单位：分）
 	 * @param $refund_fee 退款金额（单位：分）
-	 * $param $op_user_id 操作员账号
+	 * @param $op_user_id 操作员账号
 	 * @return array
 	 */
 	public function refundByTransId($transaction_id,$out_refund_no,$total_fee,$refund_fee,$op_user_id){
