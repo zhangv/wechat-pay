@@ -57,10 +57,10 @@ class WechatPay {
 		$data["trade_type"]   = self::TRADETYPE_JSAPI;
 		$data["openid"]   = $openid;
 		$result = $this->unifiedOrder($data);
-		if ($result["return_code"] == "SUCCESS") {
+		if ($result["return_code"] == "SUCCESS" && $result["result_code"] == "SUCCESS") {
 			return $result["prepay_id"];
 		} else {
-			$this->error = $result["return_msg"];
+			$this->error = $result["return_code"] == "SUCCESS" ? $result["err_code_des"] : $result["return_msg"];
 			$this->errorXML = $this->array2xml($result);
 			return null;
 		}
@@ -74,7 +74,7 @@ class WechatPay {
 	 * 统一下单接口
 	 */
 	public function unifiedOrder($params) {
-		$data = [];
+		$data = array();
 		$data["appid"] = $this->_config["appid"];
 		$data["mch_id"] = $this->_config["mch_id"];
 		$data["device_info"] = (isset($params['device_info'])&&trim($params['device_info'])!='')?$params['device_info']:null;
@@ -184,7 +184,7 @@ class WechatPay {
 		if ($result["return_code"] == "SUCCESS" && $result["result_code"] == "SUCCESS") {
 			return $result["code_url"];
 		} else {
-			$this->error = $result["return_msg"];
+			$this->error = $result["return_code"] == "SUCCESS" ? $result["err_code_des"] : $result["return_msg"];
 			return null;
 		}
 	}
@@ -196,7 +196,7 @@ class WechatPay {
 	 * @return array
 	 */
 	public function orderQuery($transaction_id,$out_trade_no){
-		$data = [];
+		$data = array();
 		$data["appid"] = $this->_config["appid"];
 		$data["mch_id"] = $this->_config["mch_id"];
 		$data["transaction_id"] = $transaction_id;
@@ -212,7 +212,7 @@ class WechatPay {
 	 * @return array
 	 */
 	public function closeOrder($out_trade_no){
-		$data = [];
+		$data = array();
 		$data["appid"] = $this->_config["appid"];
 		$data["mch_id"] = $this->_config["mch_id"];
 		$data["out_trade_no"] = $out_trade_no;
@@ -231,7 +231,7 @@ class WechatPay {
 	 * @return array
 	 */
 	public function refund($out_trade_no,$out_refund_no,$total_fee,$refund_fee,$op_user_id){
-		$data = [];
+		$data = array();
 		$data["appid"] = $this->_config["appid"];
 		$data["mch_id"] = $this->_config["mch_id"];
 		$data["nonce_str"] = $this->get_nonce_string();
@@ -255,7 +255,7 @@ class WechatPay {
 	 * @return array
 	 */
 	public function refundByTransId($transaction_id,$out_refund_no,$total_fee,$refund_fee,$op_user_id){
-		$data = [];
+		$data = array();
 		$data["appid"] = $this->_config["appid"];
 		$data["mch_id"] = $this->_config["mch_id"];
 		$data["nonce_str"] = $this->get_nonce_string();
@@ -275,7 +275,7 @@ class WechatPay {
 	 * @return array
 	 */
 	public function downloadBill($bill_date,$bill_type = 'ALL'){
-		$data = [];
+		$data = array();
 		$data["appid"] = $this->_config["appid"];
 		$data["mch_id"] = $this->_config["mch_id"];
 		$data["bill_date"] = $bill_date;
