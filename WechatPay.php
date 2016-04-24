@@ -287,11 +287,13 @@ class WechatPay {
 
 	/**
 	 * 获取js支付使用的第二个参数
+	 * 获取jsapi支付所需参数
 	 */
 	public function get_package($prepay_id) {
 		$data = array();
 		$data["appId"] = $this->_config["appid"];
-		$data["timeStamp"] = time();
+		//解决微信支付调用JSAPI缺少参数：timeStamp
+		$data["timeStamp"] = "\"".time()."\"";
 		$data["nonceStr"]  = $this->get_nonce_string();
 		$data["package"]   = "prepay_id=$prepay_id";
 		$data["signType"]  = "MD5";
