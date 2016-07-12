@@ -11,6 +11,7 @@ class WechatPay {
 	const URL_REPORT = 'https://api.mch.weixin.qq.com/payitil/report';
 	const URL_SHORTURL = 'https://api.mch.weixin.qq.com/tools/shorturl';
 	const URL_MICROPAY = 'https://api.mch.weixin.qq.com/pay/micropay';
+
 	/**
 	 * 错误信息
 	 */
@@ -44,10 +45,11 @@ class WechatPay {
 	 * @param $total_fee
 	 * @param $notify_url
 	 * @param $openid
+	 * @param array $ext
 	 * @return null
 	 */
-	public function getPrepayId($body,$out_trade_no,$total_fee,$notify_url,$openid) {
-		$data = array();
+	public function getPrepayId($body,$out_trade_no,$total_fee,$notify_url,$openid,$ext = null) {
+		$data = $ext?:[];
 		$data["nonce_str"]    = $this->get_nonce_string();
 		$data["body"]         = $body;
 		$data["out_trade_no"] = $out_trade_no;
@@ -98,7 +100,7 @@ class WechatPay {
 	}
 
 	private function post($url, $data,$cert = false) {
-		$data["sign"] = $this->sign($data);
+		if(!isset($data['sign'])) $data["sign"] = $this->sign($data);
 		$xml = $this->array2xml($data);
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -120,48 +122,6 @@ class WechatPay {
 	}
 
 	/**
-	 * 数据签名
-	 * @param $data
-	 * @return string
-	 */
-	private function sign($data) {
-		ksort($data);
-		$string1 = "";
-		foreach ($data as $k => $v) {
-			if ($v && trim($v)!='') {
-				$string1 .= "$k=$v&";
-			}
-		}
-		$stringSignTemp = $string1 . "key=" . $this->_config["apikey"];
-		$sign = strtoupper(md5($stringSignTemp));
-		return $sign;
-	}
-
-	private function array2xml($array) {
-		$xml = "<xml>" . PHP_EOL;
-		foreach ($array as $k => $v) {
-			if($v && trim($v)!='')
-				$xml .= "<$k><![CDATA[$v]]></$k>" . PHP_EOL;
-		}
-		$xml .= "</xml>";
-		return $xml;
-	}
-
-	private function xml2array($xml) {
-		$array = array();
-		$tmp = null;
-		try{
-			$tmp = (array) simplexml_load_string($xml);
-		}catch(Exception $e){}
-		if($tmp && is_array($tmp)){
-			foreach ( $tmp as $k => $v) {
-				$array[$k] = (string) $v;
-			}
-		}
-		return $array;
-	}
-
-	/**
 	 * 扫码支付(模式二)获取支付二维码
 	 * @param $body
 	 * @param $out_trade_no
@@ -170,8 +130,8 @@ class WechatPay {
 	 * @param $product_id
 	 * @return null
 	 */
-	public function getCodeUrl($body,$out_trade_no,$total_fee,$notify_url,$product_id){
-		$data = array();
+	public function getCodeUrl($body,$out_trade_no,$total_fee,$notify_url,$product_id,$ext = null){
+		$data = $ext?:[];
 		$data["nonce_str"]    = $this->get_nonce_string();
 		$data["body"]         = $body;
 		$data["out_trade_no"] = $out_trade_no;
@@ -247,7 +207,7 @@ class WechatPay {
 
 	/**
 	 * 申请退款 - 使用微信订单号
-	 * @param $out_trade_no 商户订单号
+	 * @param $transaction_id 微信订单号
 	 * @param $out_refund_no 退款单号
 	 * @param $total_fee 总金额（单位：分）
 	 * @param $refund_fee 退款金额（单位：分）
@@ -271,7 +231,7 @@ class WechatPay {
 	/**
 	 * 下载对账单
 	 * @param $bill_date 下载对账单的日期，格式：20140603
-	 * @param $bill_type 类型
+	 * @param string $bill_type 类型
 	 * @return array
 	 */
 	public function downloadBill($bill_date,$bill_type = 'ALL'){
@@ -286,14 +246,30 @@ class WechatPay {
 	}
 
 	/**
-	 * 获取js支付使用的第二个参数
+	 * 扫码原生支付模式一中的二维码链接转成短链接
+	 * @param $long_url 需要转换的URL，签名用原串，传输需URLencode
+	 * @return array
+	 */
+	public function shortUrl($long_url){
+		$data = array();
+		$data["appid"] = $this->_config["appid"];
+		$data["mch_id"] = $this->_config["mch_id"];
+		$data["long_url"] = $long_url;
+		$data["nonce_str"] = $this->get_nonce_string();
+		$data["sign"] = $this->sign($data);
+		$data["long_url"] = urlencode($long_url);
+		$result = $this->post(self::URL_SHORTURL, $data);
+		return $result;
+	}
+
+	/**
 	 * 获取jsapi支付所需参数
 	 */
 	public function get_package($prepay_id) {
 		$data = array();
 		$data["appId"] = $this->_config["appid"];
 		//解决微信支付调用JSAPI缺少参数：timeStamp
-		$data["timeStamp"] = "\"".time()."\"";
+		$data["timeStamp"] = time();
 		$data["nonceStr"]  = $this->get_nonce_string();
 		$data["package"]   = "prepay_id=$prepay_id";
 		$data["signType"]  = "MD5";
@@ -347,7 +323,7 @@ class WechatPay {
 
 	/**
 	 * 响应微信支付后台通知
-	 * @param $return_code 返回状态码 SUCCESS/FAIL
+	 * @param string $return_code 返回状态码 SUCCESS/FAIL
 	 * @param $return_msg  返回信息
 	 */
 	public function response_back($return_code="SUCCESS", $return_msg=null) {
@@ -357,8 +333,49 @@ class WechatPay {
 			$data["return_msg"] = $return_msg;
 		}
 		$xml = $this->array2xml($data);
-
 		print $xml;
+	}
+
+	/**
+	 * 数据签名
+	 * @param $data
+	 * @return string
+	 */
+	private function sign($data) {
+		ksort($data);
+		$string1 = "";
+		foreach ($data as $k => $v) {
+			if ($v && trim($v)!='') {
+				$string1 .= "$k=$v&";
+			}
+		}
+		$stringSignTemp = $string1 . "key=" . $this->_config["apikey"];
+		$sign = strtoupper(md5($stringSignTemp));
+		return $sign;
+	}
+
+	private function array2xml($array) {
+		$xml = "<xml>" . PHP_EOL;
+		foreach ($array as $k => $v) {
+			if($v && trim($v)!='')
+				$xml .= "<$k><![CDATA[$v]]></$k>" . PHP_EOL;
+		}
+		$xml .= "</xml>";
+		return $xml;
+	}
+
+	private function xml2array($xml) {
+		$array = array();
+		$tmp = null;
+		try{
+			$tmp = (array) simplexml_load_string($xml);
+		}catch(Exception $e){}
+		if($tmp && is_array($tmp)){
+			foreach ( $tmp as $k => $v) {
+				$array[$k] = (string) $v;
+			}
+		}
+		return $array;
 	}
 
 }
