@@ -1,0 +1,7 @@
+{
+  "name": "zhangv/wechat-pay",
+  "description": "The simplest wechat pay",
+  "require": {
+    "php": "^5.3.3"
+  }
+}
