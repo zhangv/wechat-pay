@@ -1,14 +1,15 @@
 <?php
+
 /**
- *
+ * Class WechatPay
  * @author zhangv
  */
 class WechatPay {
 	const TRADETYPE_JSAPI = 'JSAPI',TRADETYPE_NATIVE = 'NATIVE',TRADETYPE_APP = 'APP';
 	const URL_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder",
 		URL_ORDERQUERY = "https://api.mch.weixin.qq.com/pay/orderquery",
-		URL_CLOSEORDER = 'https://api.mch.weixin.qq.com/pay/closeorder',
-		URL_REFUND = 'https://api.mch.weixin.qq.com/secapi/pay/refund',
+	    URL_CLOSEORDER = 'https://api.mch.weixin.qq.com/pay/closeorder',
+	    URL_REFUND = 'https://api.mch.weixin.qq.com/secapi/pay/refund',
 		URL_REFUNDQUERY = 'https://api.mch.weixin.qq.com/pay/refundquery',
 		URL_DOWNLOADBILL = 'https://api.mch.weixin.qq.com/pay/downloadbill',
 		URL_REPORT = 'https://api.mch.weixin.qq.com/payitil/report',
@@ -50,9 +51,11 @@ class WechatPay {
 	 * @param $out_trade_no string 商户订单号
 	 * @param $total_fee int 总金额
 	 * @param $openid string openid
+	 * @param $ext array
+	 * @param $trade_type string 交易类型
 	 * @return string
 	 */
-	public function getPrepayId($body,$out_trade_no,$total_fee,$openid,$ext = null) {
+	public function getPrepayId($body,$out_trade_no,$total_fee,$openid,$ext = null, $trade_type = WechatPay::TRADETYPE_JSAPI) {
 		$data = ($ext && is_array($ext))?$ext:[];
 		$data["nonce_str"]    = $this->get_nonce_string();
 		$data["body"]         = $body;
@@ -60,7 +63,7 @@ class WechatPay {
 		$data["total_fee"]    = $total_fee;
 		$data["spbill_create_ip"] = $_SERVER["REMOTE_ADDR"];
 		$data["notify_url"]   = $this->_config["notify_url"];
-		$data["trade_type"]   = self::TRADETYPE_JSAPI;
+		$data["trade_type"]   = $trade_type;
 		$data["openid"]   = $openid;
 		$result = $this->unifiedOrder($data);
 		if ($result["return_code"] == "SUCCESS" && $result["result_code"] == "SUCCESS") {
@@ -320,14 +323,25 @@ class WechatPay {
 	/**
 	 * 获取js支付使用的第二个参数
 	 */
-	public function get_package($prepay_id) {
+	public function get_package($prepay_id, $trade_type = WechatPay::TRADETYPE_JSAPI) {
 		$data = array();
-		$data["appId"] = $this->_config["appid"];
-		$data["timeStamp"] = time();
-		$data["nonceStr"]  = $this->get_nonce_string();
-		$data["package"]   = "prepay_id=$prepay_id";
-		$data["signType"]  = "MD5";
-		$data["paySign"]   = $this->sign($data);
+		if ($trade_type == WechatPay::TRADETYPE_JSAPI){
+			$data["package"]   = "prepay_id=$prepay_id";
+			$data["timeStamp"] = time();
+			$data["nonceStr"]  = $this->get_nonce_string();
+			$data["appId"] = $this->_config["appid"];
+			$data["signType"]  = "MD5";
+			$data["paySign"]   = $this->sign($data);
+		} else if ($trade_type == WechatPay::TRADETYPE_APP){
+			$data["package"]   = "Sign=WXPay";
+			$data['prepayid'] = $prepay_id;
+			$data['partnerid'] = $this->_config["mch_id"];
+			$data["timestamp"] = time();
+			$data["noncestr"]  = $this->get_nonce_string();
+			$data["appid"] = $this->_config["appid"];
+			$data["sign"]   = $this->sign($data);
+		}
+
 		return $data;
 	}
 
