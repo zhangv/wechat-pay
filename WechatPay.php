@@ -1,23 +1,24 @@
 <?php
-
 /**
- * Class WechatPay
  * @author zhangv
  */
 class WechatPay {
 	const TRADETYPE_JSAPI = 'JSAPI',TRADETYPE_NATIVE = 'NATIVE',TRADETYPE_APP = 'APP';
-	const URL_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder",
-		URL_ORDERQUERY = "https://api.mch.weixin.qq.com/pay/orderquery",
-	    URL_CLOSEORDER = 'https://api.mch.weixin.qq.com/pay/closeorder',
-	    URL_REFUND = 'https://api.mch.weixin.qq.com/secapi/pay/refund',
-		URL_REFUNDQUERY = 'https://api.mch.weixin.qq.com/pay/refundquery',
-		URL_DOWNLOADBILL = 'https://api.mch.weixin.qq.com/pay/downloadbill',
-		URL_REPORT = 'https://api.mch.weixin.qq.com/payitil/report',
-		URL_SHORTURL = 'https://api.mch.weixin.qq.com/tools/shorturl',
-		URL_MICROPAY = 'https://api.mch.weixin.qq.com/pay/micropay',
-		URL_SENDREDPACK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack',
-		URL_SENDGROUPREDPACK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendgroupredpack',
-		URL_GETHBINFO = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo';
+	const SIGNTYPE_MD5 = 'MD5', SIGNTYPE_HMACSHA256 = 'HMAC-SHA256';
+	const URL_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder";
+	const URL_ORDERQUERY = "https://api.mch.weixin.qq.com/pay/orderquery";
+	const URL_CLOSEORDER = 'https://api.mch.weixin.qq.com/pay/closeorder';
+	const URL_REFUND = 'https://api.mch.weixin.qq.com/secapi/pay/refund';
+	const URL_REFUNDQUERY = 'https://api.mch.weixin.qq.com/pay/refundquery';
+	const URL_DOWNLOADBILL = 'https://api.mch.weixin.qq.com/pay/downloadbill';
+	const URL_REPORT = 'https://api.mch.weixin.qq.com/payitil/report';
+	const URL_SHORTURL = 'https://api.mch.weixin.qq.com/tools/shorturl';
+	const URL_MICROPAY = 'https://api.mch.weixin.qq.com/pay/micropay';
+	const URL_SENDREDPACK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack';
+	const URL_SENDGROUPREDPACK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendgroupredpack';
+	const URL_GETHBINFO = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo';
+	const URL_BATCHQUERYCOMMENT = 'https://api.mch.weixin.qq.com/billcommentsp/batchquerycomment';
+
 	/**
 	 * 错误信息
 	 */
@@ -26,6 +27,8 @@ class WechatPay {
 	 * 错误信息XML
 	 */
 	public $errorXML = null;
+	public $returnCode,$returnMsg,$resultCode,$errCode,$errCodeDes;
+
 	/**
 	 * 微信支付配置数组
 	 * appid        公众账号appid
@@ -38,11 +41,17 @@ class WechatPay {
 	 */
 	private $_config;
 
+	private $httpClient = null;
+
 	/**
 	 * @param $config array 微信支付配置数组
 	 */
 	public function __construct($config) {
 		$this->_config = $config;
+	}
+
+	public function setHttpClient($httpClient){
+		$this->httpClient = $httpClient;
 	}
 
 	/**
@@ -56,23 +65,17 @@ class WechatPay {
 	 * @return string
 	 */
 	public function getPrepayId($body,$out_trade_no,$total_fee,$openid,$ext = null, $trade_type = WechatPay::TRADETYPE_JSAPI) {
-		$data = ($ext && is_array($ext))?$ext:[];
+		$data = ($ext && is_array($ext))?$ext:array();
 		$data["nonce_str"]    = $this->get_nonce_string();
 		$data["body"]         = $body;
 		$data["out_trade_no"] = $out_trade_no;
 		$data["total_fee"]    = $total_fee;
-		$data["spbill_create_ip"] = $_SERVER["REMOTE_ADDR"];
+		$data["spbill_create_ip"] = isset($_SERVER["REMOTE_ADDR"])?$_SERVER["REMOTE_ADDR"]:'';
 		$data["notify_url"]   = $this->_config["notify_url"];
 		$data["trade_type"]   = $trade_type;
 		$data["openid"]   = $openid;
 		$result = $this->unifiedOrder($data);
-		if ($result["return_code"] == "SUCCESS" && $result["result_code"] == "SUCCESS") {
-			return $result["prepay_id"];
-		} else {
-			$this->error = $result["return_code"] == "SUCCESS" ? $result["err_code_des"] : $result["return_msg"];
-			$this->errorXML = $this->array2xml($result);
-			return null;
-		}
+		return $result["prepay_id"];
 	}
 
 	/**
@@ -121,12 +124,7 @@ class WechatPay {
 		$data["trade_type"]   = self::TRADETYPE_NATIVE;
 		$data["product_id"]   = $product_id;
 		$result = $this->unifiedOrder($data);
-		if ($result["return_code"] == "SUCCESS" && $result["result_code"] == "SUCCESS") {
-			return $result["code_url"];
-		} else {
-			$this->error = (isset($result["return_code"]) && $result["return_code"] == "SUCCESS") ? $result["return_msg"]:$result["err_code_des"] ;
-			return null;
-		}
+		return $result["code_url"];
 	}
 
 	/**
@@ -181,7 +179,6 @@ class WechatPay {
 		$data["refund_fee"] = $refund_fee;
 		$data["op_user_id"] = $op_user_id;
 		$result = $this->post(self::URL_REFUND, $data,true);
-
 		return $result;
 	}
 
@@ -321,9 +318,34 @@ class WechatPay {
 	}
 
 	/**
-	 * 获取js支付使用的第二个参数
+	 * 拉取订单评价数据
+	 * @param string $begin_time 开始时间,格式为yyyyMMddHHmmss
+	 * @param string $end_time 结束时间,格式为yyyyMMddHHmmss
+	 * @param int $offset 偏移
+	 * @param int $limit 条数
+	 * @return array
 	 */
-	public function get_package($prepay_id, $trade_type = WechatPay::TRADETYPE_JSAPI) {
+	public function batchQueryComment($begin_time,$end_time,$offset = 0,$limit = 200){
+		$data = array();
+		$data["appid"] = $this->_config["appid"];
+		$data["mch_id"] = $this->_config["mch_id"];
+		$data["nonce_str"] = $this->get_nonce_string();
+		$data["begin_time"] = $begin_time;
+		$data["end_time"] = $end_time;
+		$data["offset"] = $offset;
+		$data["limit"] = $limit;
+		$data["sign"] = $this->sign($data,WechatPay::SIGNTYPE_HMACSHA256);
+		$result = $this->post(self::URL_BATCHQUERYCOMMENT, $data, true); //cert is required
+		return $result;
+	}
+
+	/**
+	 * 获取JS支付/APP支付使用的第二个参数
+	 * @param $prepay_id string 预支付ID
+	 * @param $trade_type string 支付类型
+	 * @return array
+	 */
+	public function getPackage($prepay_id, $trade_type = WechatPay::TRADETYPE_JSAPI) {
 		$data = array();
 		if ($trade_type == WechatPay::TRADETYPE_JSAPI){
 			$data["package"]   = "prepay_id=$prepay_id";
@@ -341,13 +363,13 @@ class WechatPay {
 			$data["appid"] = $this->_config["appid"];
 			$data["sign"]   = $this->sign($data);
 		}
-
 		return $data;
 	}
 
 	/**
+	 * later
 	 * 获取发送到通知地址的数据(在通知地址内使用)
-	 * @return 结果数组，如果不是微信服务器发送的数据返回null
+	 * @return array 结果数组，如果不是微信服务器发送的数据返回null
 	 *          appid
 	 *          bank_type
 	 *          cash_fee
@@ -376,9 +398,53 @@ class WechatPay {
 	}
 
 	/**
+	 * 支付结果通知处理
+	 * @param $notify_data array/XML 通知数据
+	 * @param $callback callable 回调
+	 * @return null
+	 * @throws Exception
+	 */
+	public function onPaidNotify($notify_data,callable $callback = null){
+		if(!is_array($notify_data)){
+			$notify_data = $this->xml2array($notify_data);
+		}
+		if($this->validate($notify_data)){
+			if($callback && is_callable($callback)){
+				return call_user_func_array( $callback , [$notify_data] );
+			}else{
+				$this->responseNotify();
+			}
+		}else{
+			throw new Exception('Invalid paid notify data');
+		}
+	}
+
+	/**
+	 * 退款结果通知处理
+	 * @param $notify_data array/XML 通知数据
+	 * @param $callback callable 回调
+	 * @return null
+	 * @throws Exception
+	 */
+	public function onRefundedNotify($notify_data,callable $callback = null){
+		if(!is_array($notify_data)){
+			$notify_data = $this->xml2array($notify_data);
+		}
+		if($this->validate($notify_data)){
+			if($callback && is_callable($callback)){
+				call_user_func_array( $callback , $notify_data );
+			}else{
+				$this->responseNotify();
+			}
+		}else{
+			throw new Exception('Invalid refunded notify data');
+		}
+	}
+
+	/**
 	 * 验证数据签名
-	 * @param $data 数据数组
-	 * @return 数据校验结果
+	 * @param $data array 数据数组
+	 * @return boolean 数据校验结果
 	 */
 	public function validate($data) {
 		if (!isset($data["sign"])) {
@@ -391,49 +457,42 @@ class WechatPay {
 
 	/**
 	 * 响应微信支付后台通知
-	 * @param $return_code 返回状态码 SUCCESS/FAIL
-	 * @param $return_msg  返回信息
+	 * @param $return_code string 返回状态码 SUCCESS/FAIL
+	 * @param $return_msg string 返回信息
 	 */
-	public function response_back($return_code="SUCCESS", $return_msg=null) {
+	public function responseNotify($return_code="SUCCESS", $return_msg= 'OK') {
 		$data = array();
 		$data["return_code"] = $return_code;
 		if ($return_msg) {
 			$data["return_msg"] = $return_msg;
 		}
 		$xml = $this->array2xml($data);
-
 		print $xml;
 	}
 
 	private function post($url, $data,$cert = true) {
-		$data["sign"] = $this->sign($data);
+		if(!isset($data['sign'])) $data['sign'] = $this->sign($data);
 		$xml = $this->array2xml($data);
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-		curl_setopt($ch, CURLOPT_POST, 1);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-		if($cert == true){
-			//使用证书：cert 与 key 分别属于两个.pem文件
-			curl_setopt($ch,CURLOPT_SSLCERTTYPE,'PEM');
-			curl_setopt($ch,CURLOPT_SSLCERT, $this->_config['sslcertPath']);
-			curl_setopt($ch,CURLOPT_SSLKEYTYPE,'PEM');
-			curl_setopt($ch,CURLOPT_SSLKEY, $this->_config['sslkeyPath']);
+		$content = $this->httpClient->post($url,$xml,$this->_config,$cert);
+		$result = $this->xml2array($content);
+		$this->returnCode = $result["return_code"];
+		if ($this->returnCode == "SUCCESS" && $result["result_code"] == "SUCCESS") {
+			return $result;
+		} else {
+			$this->errorXML = $this->array2xml($result);
+			if($result["return_code"] == "FAIL"){
+				$this->returnMsg = $result['return_msg'];
+				throw new Exception($this->returnMsg);
+			}else{
+				$this->resultCode = $result['result_code'];
+				$this->errCode = $result['err_code'];
+				$this->errCodeDes = $result['err_code_des'];
+				throw new Exception($this->errCodeDes);
+			}
 		}
-		$content = curl_exec($ch);
-		$array = $this->xml2array($content);
-		return $array;
 	}
 
-	/**
-	 * 数据签名
-	 * @param $data
-	 * @return string
-	 */
-	private function sign($data) {
+	public function sign($data,$sign_type = WechatPay::SIGNTYPE_MD5) {
 		ksort($data);
 		$string1 = "";
 		foreach ($data as $k => $v) {
@@ -442,7 +501,11 @@ class WechatPay {
 			}
 		}
 		$stringSignTemp = $string1 . "key=" . $this->_config["apikey"];
-		$sign = strtoupper(md5($stringSignTemp));
+		if($sign_type == WechatPay::SIGNTYPE_MD5){
+			$sign = strtoupper(md5($stringSignTemp));
+		}else{
+			$sign = strtoupper(hash_hmac('sha256',$stringSignTemp,$this->_config["apikey"]));
+		}
 		return $sign;
 	}
 
@@ -472,6 +535,28 @@ class WechatPay {
 
 	private function get_nonce_string() {
 		return substr(str_shuffle("abcdefghijklmnopqrstuvwxyz0123456789"),0,32);
+	}
+
+}
+
+class HttpClient{
+	public function post($url, $data,$config,$cert = true) {
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+		if($cert == true){
+			curl_setopt($ch,CURLOPT_SSLCERTTYPE,'PEM');
+			curl_setopt($ch,CURLOPT_SSLCERT, $config['sslcertPath']);
+			curl_setopt($ch,CURLOPT_SSLKEYTYPE,'PEM');
+			curl_setopt($ch,CURLOPT_SSLKEY, $config['sslkeyPath']);
+		}
+		$content = curl_exec($ch);
+		return $content;
 	}
 
 }

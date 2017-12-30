@@ -8,6 +8,6 @@ return [
 	'sslcertPath' => '/PATHTO/apiclient_cert.pem',
 	'sslkeyPath' => '/PATHTO/apiclient_key.pem',
 	'signType' => 'MD5',
-	'notify_url' => 'http://YOURSITE/wxcallback'
-
+	'notify_url' => 'http://YOURSITE/paidnotify.php',
+	'refundnotify_url' => 'http://YOURSITE/refundednotify.php',
 ];

@@ -3,5 +3,8 @@
   "description": "The simplest wechat pay",
   "require": {
     "php": ">=5.3.3"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "6.0.8"
   }
 }
