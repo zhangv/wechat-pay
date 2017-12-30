@@ -1,10 +1,12 @@
 <?php
 /**
+ * TODO: MWEB
  * @author zhangv
  */
 class WechatPay {
-	const TRADETYPE_JSAPI = 'JSAPI',TRADETYPE_NATIVE = 'NATIVE',TRADETYPE_APP = 'APP';
+	const TRADETYPE_JSAPI = 'JSAPI',TRADETYPE_NATIVE = 'NATIVE',TRADETYPE_APP = 'APP',TRADETYPE_MWEB = 'MWEB';
 	const SIGNTYPE_MD5 = 'MD5', SIGNTYPE_HMACSHA256 = 'HMAC-SHA256';
+
 	const URL_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder";
 	const URL_ORDERQUERY = "https://api.mch.weixin.qq.com/pay/orderquery";
 	const URL_CLOSEORDER = 'https://api.mch.weixin.qq.com/pay/closeorder';
@@ -540,6 +542,7 @@ class WechatPay {
 }
 
 class HttpClient{
+
 	public function post($url, $data,$config,$cert = true) {
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -555,8 +558,7 @@ class HttpClient{
 			curl_setopt($ch,CURLOPT_SSLKEYTYPE,'PEM');
 			curl_setopt($ch,CURLOPT_SSLKEY, $config['sslkeyPath']);
 		}
-		$content = curl_exec($ch);
-		return $content;
+		return curl_exec($ch);
 	}
 
 }
