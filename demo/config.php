@@ -10,4 +10,7 @@ return [
 	'signType' => 'MD5',
 	'notify_url' => 'http://YOURSITE/paidnotify.php',
 	'refundnotify_url' => 'http://YOURSITE/refundednotify.php',
+	'h5_scene_info' => [
+		'h5_info' => ['type' => 'Wap', 'wap_url' => 'http://wapurl', 'wap_name' => 'wapname']
+	]
 ];

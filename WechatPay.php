@@ -81,6 +81,51 @@ class WechatPay {
 	}
 
 	/**
+	 * 扫码支付(模式二)获取支付二维码
+	 * @param $body
+	 * @param $out_trade_no
+	 * @param $total_fee
+	 * @param $product_id
+	 * @return null
+	 */
+	public function getCodeUrl($body,$out_trade_no,$total_fee,$product_id){
+		$data = array();
+		$data["nonce_str"]    = $this->get_nonce_string();
+		$data["body"]         = $body;
+		$data["out_trade_no"] = $out_trade_no;
+		$data["total_fee"]    = $total_fee;
+		$data["spbill_create_ip"] = isset($_SERVER["REMOTE_ADDR"])?$_SERVER["REMOTE_ADDR"]:'';
+		$data["notify_url"]   = $this->_config["notify_url"];
+		$data["trade_type"]   = self::TRADETYPE_NATIVE;
+		$data["product_id"]   = $product_id;
+		$result = $this->unifiedOrder($data);
+		return $result["code_url"];
+	}
+
+	/**
+	 * H5支付获取支付跳转链接
+	 * @param $body string 商品描述
+	 * @param $out_trade_no string 商户订单号
+	 * @param $total_fee int 总金额(分)
+	 * @return string
+	 * @throws Exception
+	 */
+	public function getMwebUrl($body,$out_trade_no,$total_fee){
+		$data = array();
+		$data["nonce_str"]    = $this->get_nonce_string();
+		$data["body"]         = $body;
+		$data["out_trade_no"] = $out_trade_no;
+		$data["total_fee"]    = $total_fee;
+		$data["spbill_create_ip"] = isset($_SERVER["REMOTE_ADDR"])?$_SERVER["REMOTE_ADDR"]:'';
+		$data["notify_url"]   = $this->_config["notify_url"];
+		$data["trade_type"]   = self::TRADETYPE_MWEB;
+		if(!isset($this->_config['h5_scene_info'])) throw new Exception('h5_scene_info should be configured');
+		$data["scene_info"]   = json_encode($this->_config['h5_scene_info']);
+		$result = $this->unifiedOrder($data);
+		return $result["mweb_url"];
+	}
+
+	/**
 	 * 统一下单接口
 	 */
 	private function unifiedOrder($params) {
@@ -105,28 +150,6 @@ class WechatPay {
 		$data["openid"] = isset($params['openid'])?$params['openid']:null;//required when trade_type = JSAPI
 		$result = $this->post(self::URL_UNIFIEDORDER, $data);
 		return $result;
-	}
-
-	/**
-	 * 扫码支付(模式二)获取支付二维码
-	 * @param $body
-	 * @param $out_trade_no
-	 * @param $total_fee
-	 * @param $product_id
-	 * @return null
-	 */
-	public function getCodeUrl($body,$out_trade_no,$total_fee,$product_id){
-		$data = array();
-		$data["nonce_str"]    = $this->get_nonce_string();
-		$data["body"]         = $body;
-		$data["out_trade_no"] = $out_trade_no;
-		$data["total_fee"]    = $total_fee;
-		$data["spbill_create_ip"] = $_SERVER["SERVER_ADDR"];
-		$data["notify_url"]   = $this->_config["notify_url"];;
-		$data["trade_type"]   = self::TRADETYPE_NATIVE;
-		$data["product_id"]   = $product_id;
-		$result = $this->unifiedOrder($data);
-		return $result["code_url"];
 	}
 
 	/**
