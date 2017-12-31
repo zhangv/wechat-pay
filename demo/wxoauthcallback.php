@@ -9,7 +9,7 @@ if (isset($_GET['code'])){
 	}else{
 		$accesstoken = $at->access_token;
 		$openid = $at->openid;
-		$this->redirect("http://{$_SERVER['HTTP_HOST']}/demo/wxpay.php?openid=$openid");
+		$this->redirect("http://{$_SERVER['HTTP_HOST']}/demo/pay.php?openid=$openid");
 	}
 }else{
 	die('授权失败，请重试。');

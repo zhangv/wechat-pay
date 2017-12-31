@@ -1,4 +1,5 @@
 <?php
+//公众号支付
 require_once __DIR__ ."/../WechatPay.php";
 $cfg = include './config.php';
 

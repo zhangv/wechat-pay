@@ -104,6 +104,7 @@ class WechatPay {
 
 	/**
 	 * H5支付获取支付跳转链接
+	 * ref:https://pay.weixin.qq.com/wiki/doc/api/H5.php?chapter=9_20&index=1
 	 * @param $body string 商品描述
 	 * @param $out_trade_no string 商户订单号
 	 * @param $total_fee int 总金额(分)
