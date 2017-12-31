@@ -52,6 +52,7 @@ class WechatPay {
 	 */
 	public function __construct($config) {
 		$this->_config = $config;
+		$this->httpClient = new HttpClient();
 	}
 
 	public function setHttpClient($httpClient){
