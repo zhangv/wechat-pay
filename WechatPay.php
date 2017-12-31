@@ -472,6 +472,44 @@ class WechatPay {
 		print $xml;
 	}
 
+	/**
+	 * 交易保障
+	 * ref:https://pay.weixin.qq.com/wiki/doc/api/H5.php?chapter=9_8&index=8
+	 * @param $interface_url
+	 * @param $execution_time
+	 * @param $return_code
+	 * @param $result_code
+	 * @param $user_ip
+	 * @param null $out_trade_no
+	 * @param null $time
+	 * @param null $device_info
+	 * @param null $return_msg
+	 * @param null $err_code
+	 * @param null $err_code_des
+	 * @return array
+	 */
+	public function report($interface_url,$execution_time,$return_code,$result_code,$user_ip,$out_trade_no = null,$time = null,$device_info = null,
+	                       $return_msg = null,$err_code = null,$err_code_des = null){
+		$data = array();
+		$data["appid"] = $this->_config["appid"];
+		$data["mch_id"] = $this->_config["mch_id"];
+		$data["nonce_str"] = $this->get_nonce_string();
+		$data["interface_url"] = $interface_url;
+		$data["execution_time"] = $execution_time;
+		$data["return_code"] = $return_code;
+		$data["result_code"] = $result_code;
+		$data["user_ip"] = $user_ip;
+		if($out_trade_no) $data["out_trade_no"] = $out_trade_no;
+		if($time) $data["time"] = $time;
+		if($device_info) $data["device_info"] = $device_info;
+		if($return_msg) $data["return_msg"] = $return_msg;
+		if($err_code) $data["err_code"] = $err_code;
+		if($err_code_des) $data["err_code_des"] = $err_code_des;
+		$data["sign"] = $this->sign($data);
+		$result = $this->post(self::URL_REPORT, $data, false); //cert is NOT required
+		return $result;
+	}
+
 	private function post($url, $data,$cert = true) {
 		if(!isset($data['sign'])) $data['sign'] = $this->sign($data);
 		$xml = $this->array2xml($data);
