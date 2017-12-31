@@ -173,24 +173,96 @@ class WechatPay {
 	}
 
 	/**
-	 * 查询订单
-	 * ref: micropay - https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_2
-	 * ref: jsapi -
-	 * @param $transaction_id string 微信交易号
-	 * @param $out_trade_no string 商户订单号
+	 * 查询订单（根据微信订单号）
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_2
+	 * @param $transaction_id string 微信订单号
 	 * @return array
 	 */
-	public function orderQuery($transaction_id,$out_trade_no){
+	public function queryOrderByTransactionId($transaction_id){
 		$data = array();
 		$data["appid"] = $this->_config["appid"];
 		$data["transaction_id"] = $transaction_id;
+		$result = $this->post(self::URL_ORDERQUERY, $data);
+		return $result;
+	}
+
+	/**
+	 * 查询订单（根据商户订单号）
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_2
+	 * @param $out_trade_no string 商户订单号
+	 * @return array
+	 */
+	public function queryOrderByOutTradeNo($out_trade_no){
+		$data = array();
+		$data["appid"] = $this->_config["appid"];
 		$data["out_trade_no"] = $out_trade_no;
 		$result = $this->post(self::URL_ORDERQUERY, $data);
 		return $result;
 	}
 
 	/**
+	 * 查询退款（根据微信订单号）
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
+	 * @param $transaction_id string 微信交易号
+	 * @param $offset int 偏移
+	 * @return array
+	 */
+	public function queryRefundByTransactionId($transaction_id,$offset = 0){
+		$data = array();
+		$data["appid"] = $this->_config["appid"];
+		$data["transaction_id"] = $transaction_id;
+		$result = $this->post(self::URL_REFUNDQUERY, $data);
+		return $result;
+	}
+
+	/**
+	 * 查询退款（根据商户订单号）
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
+	 * @param $out_trade_no string 商户交易号
+	 * @param $offset int 偏移
+	 * @return array
+	 */
+	public function queryRefundByOutTradeNo($out_trade_no,$offset = 0){
+		$data = array();
+		$data["appid"] = $this->_config["appid"];
+		$data["out_trade_no"] = $out_trade_no;
+		$result = $this->post(self::URL_REFUNDQUERY, $data);
+		return $result;
+	}
+
+	/**
+	 * 查询退款（根据微信退款单号）
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
+	 * @param $refund_id string 微信退款单号
+	 * @param $offset int 偏移
+	 * @return array
+	 */
+	public function queryRefundByRefundId($refund_id,$offset = 0){
+		$data = array();
+		$data["appid"] = $this->_config["appid"];
+		$data["refund_id"] = $refund_id;
+		$result = $this->post(self::URL_REFUNDQUERY, $data);
+		return $result;
+	}
+
+	/**
+	 * 查询退款（根据商户退款单号）
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
+	 * @param $out_refund_no string 商户退款单号
+	 * @param $offset int 偏移
+	 * @return array
+	 */
+	public function queryRefundByOutRefundNo($out_refund_no,$offset = 0){
+		$data = array();
+		$data["appid"] = $this->_config["appid"];
+		$data["out_refund_no"] = $out_refund_no;
+		$result = $this->post(self::URL_REFUNDQUERY, $data);
+		return $result;
+	}
+
+	/**
 	 * 关闭订单
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_3
 	 * @param $out_trade_no string 商户订单号
 	 * @return array
 	 */
@@ -198,49 +270,79 @@ class WechatPay {
 		$data = array();
 		$data["appid"] = $this->_config["appid"];
 		$data["out_trade_no"] = $out_trade_no;
-		$result = $this->post(self::URL_CLOSEORDER, $data);
+		$result = $this->post(self::URL_CLOSEORDER, $data,false);
 		return $result;
 	}
 
 	/**
 	 * 申请退款 - 使用商户订单号
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_4
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_4
 	 * @param $out_trade_no string 商户订单号
-	 * @param $out_refund_no string 退款单号
+	 * @param $out_refund_no string 商户退款单号
 	 * @param $total_fee int 总金额（单位：分）
 	 * @param $refund_fee int 退款金额（单位：分）
-	 * @param $op_user_id string 操作员账号
+	 * @param $ext array 扩展数组
 	 * @return array
 	 */
-	public function refund($out_trade_no,$out_refund_no,$total_fee,$refund_fee,$op_user_id){
-		$data = array();
+	public function refundByOutTradeNo($out_trade_no,$out_refund_no,$total_fee,$refund_fee,$ext = array()){
+		$data = ($ext && is_array($ext))?$ext:array();
 		$data["appid"] = $this->_config["appid"];
 		$data["out_trade_no"] = $out_trade_no;
 		$data["out_refund_no"] = $out_refund_no;
 		$data["total_fee"] = $total_fee;
 		$data["refund_fee"] = $refund_fee;
-		$data["op_user_id"] = $op_user_id;
 		$result = $this->post(self::URL_REFUND, $data,true);
 		return $result;
 	}
 
 	/**
 	 * 申请退款 - 使用微信订单号
-	 * @param $transaction_id string 微信交易号
-	 * @param $out_refund_no string 退款单号
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_4
+	 * ref: https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_4
+	 * @param $transaction_id string 微信订单号
+	 * @param $out_refund_no string 商户退款单号
 	 * @param $total_fee int 总金额（单位：分）
 	 * @param $refund_fee int 退款金额（单位：分）
-	 * @param $op_user_id string 操作员账号
+	 * @param $ext array 扩展数组
 	 * @return array
 	 */
-	public function refundByTransId($transaction_id,$out_refund_no,$total_fee,$refund_fee,$op_user_id){
-		$data = array();
+	public function refundByTransactionId($transaction_id,$out_refund_no,$total_fee,$refund_fee,$ext = array()){
+		$data = ($ext && is_array($ext))?$ext:array();
 		$data["appid"] = $this->_config["appid"];
 		$data["transaction_id"] = $transaction_id;
 		$data["out_refund_no"] = $out_refund_no;
 		$data["total_fee"] = $total_fee;
 		$data["refund_fee"] = $refund_fee;
-		$data["op_user_id"] = $op_user_id;
 		$result = $this->post(self::URL_REFUND, $data,true);
+		return $result;
+	}
+
+	/**
+	 * 撤销订单 - 使用商户订单号
+	 * https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_11&index=3
+	 * @param $out_trade_no string 商户订单号
+	 * @return array
+	 */
+	public function reverseByOutTradeNo($out_trade_no){
+		$data = array();
+		$data["appid"] = $this->_config["appid"];
+		$data["out_trade_no"] = $out_trade_no;
+		$result = $this->post(self::URL_REVERSE, $data,true);
+		return $result;
+	}
+
+	/**
+	 * 撤销订单 - 使用微信订单号
+	 * https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_11&index=3
+	 * @param $transaction_id string 微信订单号
+	 * @return array
+	 */
+	public function reverseByTransactionId($transaction_id){
+		$data = array();
+		$data["appid"] = $this->_config["appid"];
+		$data["transaction_id"] = $transaction_id;
+		$result = $this->post(self::URL_REVERSE, $data,true);
 		return $result;
 	}
 
