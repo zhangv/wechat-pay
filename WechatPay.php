@@ -553,7 +553,7 @@ class WechatPay {
 
 	/**
 	 * 支付结果通知处理
-	 * @param $notify_data array/XML 通知数据
+	 * @param $notify_data array|string 通知数据
 	 * @param $callback callable 回调
 	 * @return null
 	 * @throws Exception
