@@ -1,6 +1,5 @@
 <?php
 /**
- * TODO: MWEB
  * @author zhangv
  */
 class WechatPay {
@@ -66,17 +65,16 @@ class WechatPay {
 	 * @param $total_fee int 总金额
 	 * @param $openid string openid
 	 * @param $ext array
-	 * @param $trade_type string 交易类型
 	 * @return string
 	 */
-	public function getPrepayId($body,$out_trade_no,$total_fee,$openid,$ext = null, $trade_type = WechatPay::TRADETYPE_JSAPI) {
+	public function getPrepayId($body,$out_trade_no,$total_fee,$openid,$ext = null) {
 		$data = ($ext && is_array($ext))?$ext:array();
 		$data["body"]         = $body;
 		$data["out_trade_no"] = $out_trade_no;
 		$data["total_fee"]    = $total_fee;
 		$data["spbill_create_ip"] = isset($_SERVER["REMOTE_ADDR"])?$_SERVER["REMOTE_ADDR"]:'';
 		$data["notify_url"]   = $this->_config["notify_url"];
-		$data["trade_type"]   = $trade_type;
+		$data["trade_type"]   = WechatPay::TRADETYPE_JSAPI;
 		$data["openid"]   = $openid;
 		$result = $this->unifiedOrder($data);
 		return $result["prepay_id"];
@@ -110,10 +108,11 @@ class WechatPay {
 	 * @param $out_trade_no
 	 * @param $total_fee
 	 * @param $product_id
+	 * @param $ext array
 	 * @return null
 	 */
-	public function getCodeUrl($body,$out_trade_no,$total_fee,$product_id){
-		$data = array();
+	public function getCodeUrl($body,$out_trade_no,$total_fee,$product_id,$ext = null){
+		$data = ($ext && is_array($ext))?$ext:array();
 		$data["body"]         = $body;
 		$data["out_trade_no"] = $out_trade_no;
 		$data["total_fee"]    = $total_fee;
@@ -131,11 +130,12 @@ class WechatPay {
 	 * @param $body string 商品描述
 	 * @param $out_trade_no string 商户订单号
 	 * @param $total_fee int 总金额(分)
+	 * @param $ext array
 	 * @return string
 	 * @throws Exception
 	 */
-	public function getMwebUrl($body,$out_trade_no,$total_fee){
-		$data = array();
+	public function getMwebUrl($body,$out_trade_no,$total_fee,$ext = null){
+		$data = ($ext && is_array($ext))?$ext:array();
 		$data["body"]         = $body;
 		$data["out_trade_no"] = $out_trade_no;
 		$data["total_fee"]    = $total_fee;
@@ -482,7 +482,7 @@ class WechatPay {
 		if ($trade_type == WechatPay::TRADETYPE_JSAPI){
 			$data["package"]   = "prepay_id=$prepay_id";
 			$data["timeStamp"] = time();
-			$data["nonceStr"]  = $this->get_nonce_string();
+			$data["nonceStr"]  = $this->getNonceStr();
 			$data["appId"] = $this->_config["appid"];
 			$data["signType"]  = "MD5";
 			$data["paySign"]   = $this->sign($data);
@@ -491,7 +491,7 @@ class WechatPay {
 			$data['prepayid'] = $prepay_id;
 			$data['partnerid'] = $this->_config["mch_id"];
 			$data["timestamp"] = time();
-			$data["noncestr"]  = $this->get_nonce_string();
+			$data["noncestr"]  = $this->getNonceStr();
 			$data["appid"] = $this->_config["appid"];
 			$data["sign"]   = $this->sign($data);
 		}
@@ -518,37 +518,6 @@ class WechatPay {
 		$data["auth_code"] = $auth_code;
 		$result = $this->post(self::URL_MICROPAY,$data,false);
 		return $result;
-	}
-
-	/**
-	 * later
-	 * 获取发送到通知地址的数据(在通知地址内使用)
-	 * @return array 结果数组，如果不是微信服务器发送的数据返回null
-	 *          appid
-	 *          bank_type
-	 *          cash_fee
-	 *          fee_type
-	 *          is_subscribe
-	 *          mch_id
-	 *          nonce_str
-	 *          openid
-	 *          out_trade_no    商户订单号
-	 *          result_code
-	 *          return_code
-	 *          sign
-	 *          time_end
-	 *          total_fee       总金额
-	 *          trade_type
-	 *          transaction_id  微信支付订单号
-	 */
-	public function get_back_data() {
-		$xml = file_get_contents("php://input");
-		$data = $this->xml2array($xml);
-		if ($this->validateSign($data)) {
-			return $data;
-		} else {
-			return null;
-		}
 	}
 
 	/**
@@ -687,11 +656,11 @@ class WechatPay {
 
 	private function post($url, $data,$cert = true) {
 		if(!isset($data['mch_id'])) $data["mch_id"] = $this->_config["mch_id"];
-		if(!isset($data['nonce_str'])) $data["nonce_str"] = $this->get_nonce_string();
+		if(!isset($data['nonce_str'])) $data["nonce_str"] = $this->getNonceStr();
 		if(!isset($data['sign'])) $data['sign'] = $this->sign($data);
 
 		$xml = $this->array2xml($data);
-		$content = $this->httpClient->post($url,$xml,$this->_config,$cert);
+		$content = $this->httpClient->post($url,$xml,$cert,$this->_config);
 		$result = $this->xml2array($content);
 		$this->returnCode = $result["return_code"];
 		if ($this->returnCode == "SUCCESS" && $result["result_code"] == "SUCCESS") {
@@ -721,9 +690,9 @@ class WechatPay {
 		$stringSignTemp = $string1 . "key=" . $this->_config["apikey"];
 		if($sign_type == WechatPay::SIGNTYPE_MD5){
 			$sign = strtoupper(md5($stringSignTemp));
-		}else{
+		}elseif($sign_type == WechatPay::SIGNTYPE_HMACSHA256){
 			$sign = strtoupper(hash_hmac('sha256',$stringSignTemp,$this->_config["apikey"]));
-		}
+		}else throw new Exception("Not supported sign type - $sign_type");
 		return $sign;
 	}
 
@@ -751,7 +720,7 @@ class WechatPay {
 		return $array;
 	}
 
-	private function get_nonce_string() {
+	private function getNonceStr() {
 		return substr(str_shuffle("abcdefghijklmnopqrstuvwxyz0123456789"),0,32);
 	}
 
@@ -759,7 +728,7 @@ class WechatPay {
 
 class HttpClient{
 
-	public function post($url, $data,$config,$cert = true) {
+	public function post($url, $data,$cert = true,$config = array()) {
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
@@ -774,7 +743,9 @@ class HttpClient{
 			curl_setopt($ch,CURLOPT_SSLKEYTYPE,'PEM');
 			curl_setopt($ch,CURLOPT_SSLKEY, $config['sslkeyPath']);
 		}
-		return curl_exec($ch);
+		$result = curl_exec($ch);
+		curl_close($ch);
+		return $result;
 	}
 
 }
