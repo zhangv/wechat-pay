@@ -1,5 +1,6 @@
 <?php
 /**
+ * @license MIT
  * @author zhangv
  */
 class WechatPay {
@@ -32,15 +33,13 @@ class WechatPay {
 	public $errorXML = null;
 	public $returnCode,$returnMsg,$resultCode,$errCode,$errCodeDes;
 
+	public $requestXML = null;
+	public $responseXML = null;
+	public $requestArray = null;
+	public $responseArray = null;
+
 	/**
 	 * 微信支付配置数组
-	 * appid        公众账号appid
-	 * mch_id       商户号
-	 * apikey       支付密钥
-	 * appsecret    公众号appsecret
-	 * sslcertPath  证书路径(apiclient_cert.pem)
-	 * sslkeyPath   密钥路径(apiclient_key.pem)
-	 * notify_url   通知url
 	 */
 	private $_config;
 
@@ -500,6 +499,7 @@ class WechatPay {
 
 	/**
 	 * 提交刷卡支付
+	 * ref:https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_10&index=1
 	 * @param $body
 	 * @param $out_trade_no
 	 * @param $total_fee
@@ -630,6 +630,7 @@ class WechatPay {
 
 	/**
 	 * 转换短链接
+	 * ref:https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_9&index=8
 	 * @param $longurl
 	 * @return string
 	 */
@@ -659,9 +660,12 @@ class WechatPay {
 		if(!isset($data['nonce_str'])) $data["nonce_str"] = $this->getNonceStr();
 		if(!isset($data['sign'])) $data['sign'] = $this->sign($data);
 
-		$xml = $this->array2xml($data);
-		$content = $this->httpClient->post($url,$xml,$cert,$this->_config);
+		$this->requestArray = $data;
+		$this->requestXML = $this->array2xml($data);
+		$content = $this->httpClient->post($url,$this->requestXML,$cert,$this->_config);
+		$this->responseXML = $content;
 		$result = $this->xml2array($content);
+		$this->responseArray = $result;
 		$this->returnCode = $result["return_code"];
 		if ($this->returnCode == "SUCCESS" && $result["result_code"] == "SUCCESS") {
 			return $result;
@@ -736,7 +740,7 @@ class HttpClient{
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 		if($cert == true){
 			curl_setopt($ch,CURLOPT_SSLCERTTYPE,'PEM');
 			curl_setopt($ch,CURLOPT_SSLCERT, $config['sslcertPath']);
