@@ -1,6 +1,17 @@
 {
   "name": "zhangv/wechat-pay",
   "description": "The simplest wechat pay",
+  "keywords": ["log","logging"],
+  "homepage": "https://github.com/Seldaek/monolog",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "ZhangV",
+      "email": "derekzhangv@gmail.com",
+      "homepage": "http://zhangv.com",
+      "role": "Developer"
+    }
+  ],
   "require": {
     "php": ">=5.3.3"
   },
