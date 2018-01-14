@@ -11,7 +11,7 @@ class WechatPayTest extends TestCase{
 
 	public function setUp(){
 		$config = [
-			'mch_id' => 'XXXX', //商户号
+			'mch_id' => 'XXXXXXXX', //商户号
 			'appid' => 'XXXXXXXXXXXXXXXXXXX', //APPID
 			'appsecret' => 'XXXXXXXXXXXXXXXXXXXXXXXXX', //App Secret
 			'apikey' =>'XXXXXXXXXXXXXXXXXXXXXXX', //支付密钥
