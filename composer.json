@@ -1,8 +1,8 @@
 {
   "name": "zhangv/wechat-pay",
   "description": "The simplest wechat pay",
-  "keywords": ["log","logging"],
-  "homepage": "https://github.com/Seldaek/monolog",
+  "keywords": ["weixin","wechat","wechatpay","微信支付"],
+  "homepage": "https://github.com/zhangv/wechat-pay",
   "license": "MIT",
   "authors": [
     {
