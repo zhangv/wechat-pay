@@ -4,7 +4,6 @@ language: php
 
 php:
   - '7.0'
-  - hhvm # on Trusty only
   - '7.1'
 
 cache:
