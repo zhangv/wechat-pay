@@ -17,4 +17,4 @@ before_install:
 install: travis_retry composer install
 
 script:
-  - ./vendor/bin/phpunit $HOME/test/*MockTest.php
+  - ./vendor/bin/phpunit test/*MockTest.php
