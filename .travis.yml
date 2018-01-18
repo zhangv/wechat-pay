@@ -1,0 +1,20 @@
+dist: trusty
+sudo: false
+language: php
+
+php:
+  - 7.1
+  - 7.2
+  - nightly
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+
+before_install:
+  - composer self-update
+
+install: travis_retry composer install
+
+script:
+  - ./vendor/bin/phpunit $HOME/test/*MockTest.php
