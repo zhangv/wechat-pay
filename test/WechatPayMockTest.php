@@ -1,6 +1,10 @@
 <?php
-require_once __DIR__ . '/../WechatPay.php';
+require_once __DIR__ . '/../src/WechatPay.php';
+require_once __DIR__ . '/../src/WechatOAuth.php';
+require_once __DIR__ . '/../src/HttpClient.php';
 use PHPUnit\Framework\TestCase;
+use zhangv\wechat\WechatPay;
+use zhangv\wechat\HttpClient;
 
 class WechatPayMockTest extends TestCase{
 	/**

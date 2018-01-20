@@ -1,6 +1,8 @@
 <?php
 //扫码支付
-require_once __DIR__ ."/../WechatPay.php";
+require_once __DIR__ ."/../src/WechatPay.php";
+use zhangv\wechat\WechatPay;
+
 $cfg = include './config.php';
 
 $payment = new WechatPay($cfg);

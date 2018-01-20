@@ -1,8 +1,12 @@
 <?php
+require_once __DIR__ ."/../src/WechatOAuth.php";
+use zhangv\wechat\WechatOAuth;
+
 $cfg = require './config.php';
 $appid = $cfg['appid'];
 $redirect = "http://{$_SERVER['HTTP_HOST']}/demo/wxoauthcallback.php";
 $scope = 'snsapi_userinfo';
 $state = "";
-$url = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=$appid&redirect_uri=$redirect&response_type=code&scope=$scope&state=$state#wechat_redirect";
+$oauth =new WechatOAuth($appid,$cfg['appsecret'],$redirect);
+$url = $oauth->authorizeURI($scope);
 $this->redirect($url);
