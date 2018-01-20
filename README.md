@@ -5,6 +5,10 @@
 
 #### simplest, minimal dependency
 
+###Install
+composer require zhangv/wechat-pay
+
+
 Step1 - Configuration
 ```php
 return [
