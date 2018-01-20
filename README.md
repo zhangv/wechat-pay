@@ -5,7 +5,7 @@
 
 #### simplest, minimal dependency
 
-###Install
+### Install
 composer require zhangv/wechat-pay
 
 
