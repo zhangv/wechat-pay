@@ -12,7 +12,7 @@ composer require zhangv/wechat-pay
 or
 
 ```
-"zhangv/wechat-pay":">=1.2.5"
+"zhangv/wechat-pay":">1.2.5"
 ```
 
 Step1 - Configuration
