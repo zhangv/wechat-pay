@@ -7,6 +7,6 @@ $appid = $cfg['appid'];
 $redirect = "http://{$_SERVER['HTTP_HOST']}/demo/wxoauthcallback.php";
 $scope = 'snsapi_userinfo';
 $state = "";
-$oauth =new WechatOAuth($appid,$cfg['appsecret'],$redirect);
-$url = $oauth->authorizeURI($scope);
+$oauth =new WechatOAuth($appid,$cfg['appsecret']);
+$url = $oauth->authorizeURI($redirect,$scope);
 $this->redirect($url);

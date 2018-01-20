@@ -12,15 +12,14 @@ class WechatOAuth {
 	public $errCode = null;
 	public $errMsg = null;
 
-	private $appId,$appSecret;
-	private $redirectURI = null;
+	private $appId = null;
+	private $appSecret = null;
 	private $httpClient = null;
 	private $accessToken = null;
 
-	public function __construct($appId,$appSecret,$redirectURI = null) {
+	public function __construct($appId,$appSecret) {
 		$this->appId = $appId;
 		$this->appSecret = $appSecret;
-		$this->redirectURI = $redirectURI;
 		$this->httpClient = new HttpClient();
 	}
 
@@ -32,8 +31,9 @@ class WechatOAuth {
 		$this->accessToken = $accessToken;
 	}
 
-	public function authorizeURI($scope = 'snsapi_userinfo',$state = ''){
-		return "https://open.weixin.qq.com/connect/oauth2/authorize?appid={$this->appId}&redirect_uri={$this->redirectURI}&response_type=code&scope=$scope&state=$state#wechat_redirect";
+	public function authorizeURI($redirectURI,$scope = 'snsapi_userinfo',$state = ''){
+		$redirectURI = urlencode($redirectURI);
+		return "https://open.weixin.qq.com/connect/oauth2/authorize?appid={$this->appId}&redirect_uri={$redirectURI}&response_type=code&scope=$scope&state=$state#wechat_redirect";
 	}
 
 	public function authorize($code){
@@ -42,8 +42,8 @@ class WechatOAuth {
 		return json_decode($this->responseJSON);
 	}
 
-	public function getUserInfo($openid){
-		$url = "https://api.weixin.qq.com/sns/userinfo?access_token={$this->accesstoken}&openid=$openid&lang=zh_CN";
+	public function getUserInfo($openId){
+		$url = "https://api.weixin.qq.com/sns/userinfo?access_token={$this->accessToken}&openid=$openId&lang=zh_CN";
 		$this->responseJSON = $this->httpClient->get($url);
 		return json_decode($this->responseJSON);
 	}

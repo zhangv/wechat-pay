@@ -1,10 +1,16 @@
 <?php
+/**
+ * @license MIT
+ * @author zhangv
+ */
 namespace zhangv\wechat;
 
 class HttpClient{
 
 	const GET = 'get',POST = 'post', DELETE = 'delete',PUT = 'put';
-	private $instance;
+	private $instance = null;
+	private $errNo = null;
+	private $info = null;
 	private $timeout = 1;
 
 	public function __construct($timeout = 1) {
@@ -25,12 +31,13 @@ class HttpClient{
 		}
 	}
 
-	public function get($url,$params = array(),$headers = array()) {
+	public function get($url,$params = array(),$headers = array(),$opts = array()) {
 		if (!$this->instance)	$this->initInstance($this->timeout);
-		$url .= '?' . http_build_query($params);
+		if($params && count($params) > 0) $url .= '?' . http_build_query($params);
 		curl_setopt($this->instance, CURLOPT_URL, $url);
 		curl_setopt($this->instance, CURLOPT_HTTPGET, true);
 		curl_setopt($this->instance, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt_array($this->instance,$opts);
 		$result = $this->execute();
 		curl_close($this->instance);
 		$this->instance = null;
@@ -50,38 +57,10 @@ class HttpClient{
 		return $result;
 	}
 
-	public function delete($url, $params = array(),$headers = array()) {
-		if (!$this->instance)	$this->initInstance($this->timeout);
-		curl_setopt($this->instance, CURLOPT_URL, $url);
-		curl_setopt($this->instance, CURLOPT_CUSTOMREQUEST, "DELETE");
-		curl_setopt($this->instance, CURLOPT_HEADER, false);
-		curl_setopt($this->instance, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($this->instance, CURLOPT_HTTPHEADER, $headers);
-		$result = $this->execute();
-		curl_close($this->instance);
-		$this->instance = null;
-		return $result;
-	}
-
-	public function put($url, $params = array(),$headers = array()) {
-		if (!$this->instance)	$this->initInstance($this->timeout);
-		curl_setopt($this->instance, CURLOPT_URL, $url);
-		curl_setopt($this->instance, CURLOPT_CUSTOMREQUEST, "PUT");
-		curl_setopt($this->instance, CURLOPT_HEADER, false);
-		curl_setopt($this->instance, CURLOPT_POSTFIELDS, http_build_query($params));
-		curl_setopt($this->instance, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($this->instance, CURLOPT_HTTPHEADER, $headers);
-		$result = $this->execute();
-		curl_close($this->instance);
-		$this->instance = null;
-		return $result;
-	}
-
 	private function execute() {
 		$result = curl_exec($this->instance);
-		if (curl_errno($this->instance)){
-			$result = false;
-		}
+		$this->errNo = curl_errno($this->instance);
+		$this->info = curl_getinfo($this->instance);
 		return $result;
 	}
 
@@ -91,4 +70,7 @@ class HttpClient{
 		curl_setopt_array($this->instance, $optArray);
 	}
 
+	public function getInfo(){
+		return $this->info;
+	}
 }
