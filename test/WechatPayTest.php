@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../src/WechatPay.php';
+require_once __DIR__ . '/../src/HttpClient.php';
 use PHPUnit\Framework\TestCase;
 use zhangv\wechat\WechatPay;
 

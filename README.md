@@ -8,6 +8,9 @@
 ### Install
 composer require zhangv/wechat-pay
 
+or
+
+
 
 Step1 - Configuration
 ```php
