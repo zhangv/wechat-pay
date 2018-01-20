@@ -6,11 +6,14 @@
 #### simplest, minimal dependency
 
 ### Install
+```
 composer require zhangv/wechat-pay
-
+```
 or
 
-
+```
+"zhangv/wechat-pay":"^1.2.4"
+```
 
 Step1 - Configuration
 ```php
