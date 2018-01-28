@@ -54,10 +54,25 @@ class WechatOAuth {
 		return $this->responseJSON;
 	}
 
-	public function verifyToken($accessToekn,$openId){
-		$url = "https://api.weixin.qq.com/sns/auth?access_token=$accessToekn&openid=$openId";
+	public function verifyToken($accessToken,$openId){
+		$url = "https://api.weixin.qq.com/sns/auth?access_token=$accessToken&openid=$openId";
 		$this->responseJSON = $this->httpClient->get($url);
 		return $this->responseJSON;
 	}
 
+	public function getAccessToken(){
+		$url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={$this->appId}&secret={$this->appSecret}";
+		$this->responseJSON = $this->httpClient->get($url);
+		$json = json_decode($this->responseJSON);
+		$this->accessToken = $json->access_token;
+		return $this->accessToken;
+	}
+
+	public function getTicket(){
+		$accessToken = $this->getAccessToken();
+		// $url = "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=$accessToken";
+		$url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?type=jsapi&access_token=$accessToken";
+		$this->responseJSON = $this->httpClient->get($url);
+		return $this->responseJSON;
+	}
 }

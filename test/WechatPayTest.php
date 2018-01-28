@@ -10,6 +10,7 @@ class WechatPayTest extends TestCase{
 	 */
 	private $wechatPay;
 	private $openid;
+	private $bankNo;
 
 	public function setUp(){
 		$config = [
@@ -27,9 +28,11 @@ class WechatPayTest extends TestCase{
 			],
 			'rsa_pubkey_path' => '/PATHTO/pubkey.pem'
 		];
+		if(file_exists(__DIR__ . 'config.php'))
+			$config = require_once __DIR__ . 'config.php';
 
 		$this->wechatPay = new WechatPay($config);
-		$this->openid = "TESTOPENID";
+		$this->openid = "o6JMpuDgLS-L4uvjE6VsIkAEMNM8";
 	}
 
 	private static $outTradeNoOffset = 0;
@@ -39,7 +42,7 @@ class WechatPayTest extends TestCase{
 
 	public function testGetPrepayId(){
 		$outtradeno = $this->genOutTradeNo();
-		$result = $this->wechatPay->getPrepayId("test", "$outtradeno", 1, $this->openid, 'ext');
+		$result = $this->wechatPay->getPrepayId("test", "$outtradeno", 1, $this->openid, '127.0.0.1','ext');
 		$this->assertEquals('SUCCESS',$this->wechatPay->responseArray['return_code']);
 		$this->assertEquals(WechatPay::TRADETYPE_JSAPI,$this->wechatPay->responseArray['trade_type']);
 		$this->assertNotNull($result);
@@ -55,9 +58,7 @@ class WechatPayTest extends TestCase{
 
 	public function testGetMwebUrl(){//需要开通
 		$outtradeno = $this->genOutTradeNo();
-		try{
-			$result = $this->wechatPay->getMwebUrl("test", "$outtradeno", 1,  'ext');
-		}catch (Exception $e){}
+		$result = $this->wechatPay->getMwebUrl("test", "$outtradeno", 1,  'ext');
 		$this->assertEquals('SUCCESS',$this->wechatPay->responseArray['return_code']);
 		$this->assertEquals(WechatPay::TRADETYPE_MWEB,$this->wechatPay->responseArray['trade_type']);
 	}
@@ -65,9 +66,7 @@ class WechatPayTest extends TestCase{
 	public function testMicroPay(){
 		$outtradeno = $this->genOutTradeNo();
 		$authcode = '120061098828009406';//invalid auth code
-		try{
-			$result = $this->wechatPay->microPay("test", "$outtradeno", 1,  '127.0.0.1',$authcode,[]);
-		}catch (Exception $e){}
+		$result = $this->wechatPay->microPay("test", "$outtradeno", 1,  '127.0.0.1',$authcode,[]);
 		$this->assertEquals('SUCCESS',$this->wechatPay->responseArray['return_code']);
 		$this->assertEquals('AUTH_CODE_INVALID',$this->wechatPay->responseArray['err_code']);
 	}
@@ -93,7 +92,7 @@ class WechatPayTest extends TestCase{
 			$this->wechatPay->downloadBill(date('Ymd',time()));
 		}catch (Exception $e){}
 		$this->assertEquals('FAIL',$this->wechatPay->responseArray['return_code']);
-		$this->assertEquals('20001',$this->wechatPay->responseArray['error_code']); //invalid bill_date
+		$this->assertEquals('20002',$this->wechatPay->responseArray['error_code']); //invalid bill_date
 	}
 
 	public function testSendRedPack(){
@@ -120,5 +119,49 @@ class WechatPayTest extends TestCase{
 		$result = $this->wechatPay->shortUrl('weixin://wxpay/bizpayurl?sign=XXXXX&appid=XXXXX&mch_id=XXXXX&product_id=XXXXXX&time_stamp=XXXXXX&nonce_str=XXXXX');
 		$this->assertEquals('SUCCESS',$this->wechatPay->responseArray['return_code']);
 		$this->assertNotNull($result);
+	}
+
+	public function testTransferWallet(){
+		$outtradeno = $this->genOutTradeNo();
+		$result = $this->wechatPay->transferWallet($outtradeno, $this->openid, 1, 'test','127.0.0.1','zw');
+		$this->assertEquals('SUCCESS',$this->wechatPay->responseArray['return_code']);
+		$this->assertNotNull($result);
+	}
+
+	public function testQueryTransferWallet(){
+		$outtradeno = $this->genOutTradeNo();
+		$result = $this->wechatPay->queryTransferWallet($outtradeno);
+		$this->assertEquals('SUCCESS',$this->wechatPay->responseArray['return_code']);
+		$this->assertNotNull($result);
+	}
+
+	public function testTransferBankCard(){
+		$outtradeno = $this->genOutTradeNo();
+		$result = $this->wechatPay->transferBankCard($outtradeno, $this->bankNo,'zw', WechatPay::$BANKCODE['招商银行'],1,'test');
+		$this->assertEquals('SUCCESS',$this->wechatPay->responseArray['return_code']);
+		$this->assertNotNull($result);
+	}
+
+	public function testQueryTransferBankCard(){
+		$outtradeno = $this->genOutTradeNo();
+		$result = $this->wechatPay->queryTransferBankCard($outtradeno);
+		$this->assertEquals('SUCCESS',$this->wechatPay->responseArray['return_code']);
+		$this->assertNotNull($result);
+	}
+
+	public function testGetPublicKey(){
+		try{
+			$result = $this->wechatPay->getPublicKey(true);
+		}catch (Exception $e){
+			var_dump($e);
+		}
+
+		$this->assertEquals('SUCCESS',$this->wechatPay->responseArray['return_code']);
+		$this->assertNotNull($result);
+	}
+
+	public function testRSAEncrypt(){
+		$result = $this->wechatPay->rsaEncrypt('a');
+		$this->assertNotEmpty($result);
 	}
 }

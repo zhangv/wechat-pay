@@ -39,35 +39,49 @@ class WechatPay {
 		'平安银行' => '1010', '中信银行' => '1021', '华夏银行' => '1025', '广发银行' => '1027', '光大银行' => '1022',
 		'北京银行' => '1032', '宁波银行' => '1056',
 	];
-
-	/**
-	 * 错误信息
-	 */
-	public $error = null;
-	/**
-	 * 错误信息XML
-	 */
-	public $errorXML = null;
-	public $returnCode,$returnMsg,$resultCode,$errCode,$errCodeDes;
-
+	/** @var string */
+	public $returnCode;
+	/** @var string */
+	public $returnMsg;
+	/** @var string */
+	public $resultCode;
+	/** @var string */
+	public $errCode;
+	/** @var string */
+	public $errCodeDes;
+	/** @var string */
 	public $requestXML = null;
+	/** @var string */
 	public $responseXML = null;
+	/** @var array */
 	public $requestArray = null;
+	/** @var array */
 	public $responseArray = null;
-
-	/**
-	 * 微信支付配置数组
-	 */
+	/** @var array */
 	private $config;
-
+	/** @var HttpClient */
 	private $httpClient = null;
+	/** @var WechatOAuth */
+	private $wechatOAuth = null;
+
 
 	/**
 	 * @param $config array 微信支付配置数组
 	 */
-	public function __construct($config) {
+	public function __construct(array $config) {
 		$this->config = $config;
-		$this->httpClient = new HttpClient();
+		$this->httpClient = new HttpClient(5);
+	}
+
+	public function getWechatOAuth(){
+		if(!$this->wechatOAuth){
+			$this->wechatOAuth = new WechatOAuth($this->config['app_id'],$this->config['app_secret']);
+		}
+		return $this->wechatOAuth;
+	}
+
+	public function setConfig($config){
+		$this->config = $config;
 	}
 
 	public function setHttpClient($httpClient){
@@ -76,6 +90,7 @@ class WechatPay {
 
 	/**
 	 * 获取JSAPI的prepay_id
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
 	 * @param $body string 内容
 	 * @param $out_trade_no string 商户订单号
 	 * @param $total_fee int 总金额
@@ -83,12 +98,12 @@ class WechatPay {
 	 * @param $ext array
 	 * @return string
 	 */
-	public function getPrepayId($body,$out_trade_no,$total_fee,$openid,$ext = null) {
+	public function getPrepayId($body,$out_trade_no,$total_fee,$openid,$spbill_create_ip = null,$ext = null) {
 		$data = ($ext && is_array($ext))?$ext:array();
 		$data["body"]         = $body;
 		$data["out_trade_no"] = $out_trade_no;
 		$data["total_fee"]    = $total_fee;
-		$data["spbill_create_ip"] = isset($_SERVER["REMOTE_ADDR"])?$_SERVER["REMOTE_ADDR"]:'';
+		$data["spbill_create_ip"] = $spbill_create_ip?:$_SERVER["REMOTE_ADDR"];
 		$data["notify_url"]   = $this->config["notify_url"];
 		$data["trade_type"]   = WechatPay::TRADETYPE_JSAPI;
 		$data["openid"]   = $openid;
@@ -166,6 +181,9 @@ class WechatPay {
 
 	/**
 	 * 统一下单接口
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
+	 * @param array $params
+	 * @return json
 	 */
 	private function unifiedOrder($params) {
 		$data = array();
@@ -678,20 +696,23 @@ class WechatPay {
 	 * @param $partner_trade_no
 	 * @param $openid
 	 * @param $amount
+	 * @param $desc
 	 * @param $spbill_create_ip
 	 * @param $check_name
 	 * @param $re_user_name
 	 * @return array
+	 * @throws Exception
 	 */
-	public function transferWallet($partner_trade_no,$openid,$amount,$desc,$spbill_create_ip = null,$check_name = WechatPay::CHECKNAME_FORCECHECK,$re_user_name = ''){
+	public function transferWallet($partner_trade_no,$openid,$amount,$desc,$spbill_create_ip = null,$re_user_name = null,$check_name = WechatPay::CHECKNAME_FORCECHECK){
 		$data = array();
+		if($check_name == WechatPay::CHECKNAME_FORCECHECK && !$re_user_name) throw new Exception('Real name is required');
 		$data["mch_appid"] = $this->config["app_id"];
 		$data["mchid"] = $this->config["mch_id"];
 		$data["partner_trade_no"] = $partner_trade_no;
 		$data["openid"] = $openid;
 		$data["amount"] = $amount;
 		$data["desc"] = $desc;
-		if(!$spbill_create_ip) $data['spbill_create_ip'] = $_SERVER['SERVER_ADDR'];
+		$data['spbill_create_ip'] = $spbill_create_ip?:$_SERVER['SERVER_ADDR'];
 		$data["check_name"] = $check_name;
 		$data["re_user_name"] = $re_user_name;
 		$result = $this->post(self::URL_TRANSFER_WALLET,$data,true);
@@ -726,13 +747,14 @@ class WechatPay {
 	 * @throws Exception
 	 */
 	public function transferBankCard($partner_trade_no,$bank_no,$true_name,$bank_code,$amount,$desc){
-		if(!in_array($bank_code,array_keys(self::$BANKCODE))) throw new Exception("Unsupported bank id");
+		if(!in_array($bank_code,array_values(self::$BANKCODE))) throw new Exception("Unsupported bank code - $bank_code");
 		$data = array();
 		$data["partner_trade_no"] = $partner_trade_no;
 		$enc_bank_no = $this->rsaEncrypt($bank_no);
 		$data["enc_bank_no"] = $enc_bank_no;
 		$enc_true_name = $this->rsaEncrypt($true_name);
 		$data["enc_true_name"] = $enc_true_name;
+		$data["bank_code"] = $bank_code;
 		$data["desc"] = $desc;
 		$data["amount"] = $amount;
 		$result = $this->post(self::URL_TRANSFER_BANKCARD,$data,true);
@@ -755,15 +777,27 @@ class WechatPay {
 		$data["sign_type"] = $this->config["sign_type"];
 		$result = $this->post(self::URL_GETPUBLICKEY,$data,true);
 		$pubkey = $result['pub_key'];
+		$pubkey = $this->convertPKCS1toPKCS8($pubkey);
 		$fp = fopen($this->config["rsa_pubkey_path"], "w");
 		fwrite($fp, $pubkey);
 		if ($fp) fclose($fp);
 		return $pubkey;
 	}
 
-	private function rsaEncrypt($data){
+	private function convertPKCS1toPKCS8($pkcs1){
+		$start_key = $pkcs1;
+		$start_key = str_replace('-----BEGIN RSA PUBLIC KEY-----', '', $start_key);
+		$start_key = trim(str_replace('-----END RSA PUBLIC KEY-----', '', $start_key));
+		$key = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A' . str_replace("\n", '', $start_key);
+		$key = "-----BEGIN PUBLIC KEY-----\n" . wordwrap($key, 64, "\n", true) . "\n-----END PUBLIC KEY-----";
+		return $key;
+	}
+
+	public function rsaEncrypt($data){
 		$pubkey = $this->getPublicKey();
-		if (openssl_public_encrypt($data, $encrypted, $pubkey))
+		$encrypted = null;
+		$pubkey = openssl_get_publickey($pubkey);
+		if (openssl_public_encrypt($data, $encrypted, $pubkey,OPENSSL_PKCS1_OAEP_PADDING))
 			$data = base64_encode($encrypted);
 		else
 			throw new Exception('Unable to encrypt data');
@@ -778,16 +812,51 @@ class WechatPay {
 	 */
 	public function queryTransferBankCard($partner_trade_no){
 		$data = array();
+		$data["appid"] = $this->config["app_id"];
 		$data["mch_id"] = $this->config["mch_id"];
 		$data["partner_trade_no"] = $partner_trade_no;
 		$result = $this->post(self::URL_QUERY_TRANSFER_WALLET,$data,true);
 		return $result;
 	}
 
+	public function getSignPackage($url){
+		$jsapiTicket = $this->getJSAPITicket();
+		$timestamp = time();
+		$nonceStr = $this->getNonceStr();
+		$rawString = "jsapi_ticket=$jsapiTicket&noncestr=$nonceStr&timestamp=$timestamp&url=$url";
+		$signature = sha1($rawString);
+
+		$signPackage = array(
+			"appId" => $this->config['app_id'],
+			"nonceStr" => $nonceStr,
+			"timestamp" => $timestamp,
+			"url" => $url,
+			"signature" => $signature,
+			"rawString" => $rawString
+		);
+		return $signPackage;
+	}
+
+	public function getJSAPITicket(){
+		if(isset($this->config['jsapi_ticket']) && file_exists($this->config['jsapi_ticket'])){
+			$data = json_decode(file_get_contents($this->config['jsapi_ticket']));
+			if (!$data || $data->expire_time < time()) {
+				$data = $this->getWechatOAuth()->getTicket();
+				$fp = fopen($this->config["jsapi_ticket"], "w");
+				fwrite($fp, $data);
+				if ($fp) fclose($fp);
+				$data = json_decode($data);
+			}
+			return $data->jsapi_ticket;
+		}
+	}
+
 	private function post($url, $data,$cert = true) {
 		if(!isset($data['mch_id']) && !isset($data['mchid'])) $data["mch_id"] = $this->config["mch_id"];
 		if(!isset($data['nonce_str'])) $data["nonce_str"] = $this->getNonceStr();
 		if(!isset($data['sign'])) $data['sign'] = $this->sign($data);
+		$this->requestXML = $this->responseXML = null;
+		$this->requestArray = $this->responseArray = null;
 
 		$this->requestArray = $data;
 		$this->requestXML = $this->array2xml($data);
@@ -805,22 +874,27 @@ class WechatPay {
 		}
 
 		$content = $this->httpClient->post($url,$this->requestXML,[],$opts);
+		if(!$content) throw new Exception("Empty response with {$this->requestXML}");
+
 		$this->responseXML = $content;
+
 		$result = $this->xml2array($content);
 		$this->responseArray = $result;
+		if(empty($result['return_code'])){
+			throw new Exception("No return code presents in {$this->responseXML}");
+		}
 		$this->returnCode = $result["return_code"];
 		if ($this->returnCode == "SUCCESS" && $result["result_code"] == "SUCCESS") {
 			return $result;
 		} else {
-			$this->errorXML = $this->array2xml($result);
 			if($result["return_code"] == "FAIL"){
 				$this->returnMsg = $result['return_msg'];
-				throw new \Exception($this->returnMsg);
+				throw new Exception($this->returnMsg);
 			}else{
 				$this->resultCode = $result['result_code'];
 				$this->errCode = $result['err_code'];
 				$this->errCodeDes = $result['err_code_des'];
-				throw new \Exception($this->errCodeDes);
+				throw new Exception("[$this->errCode]$this->errCodeDes");
 			}
 		}
 	}
