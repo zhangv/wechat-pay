@@ -19,7 +19,7 @@ $amt = 1;
 $prepay_id = $payment->getPrepayId("$desc", "$stamp", $amt, $openid, $ext);
 $package = $payment->getPackage($prepay_id);
 ?>
-<script src="http://res.wx.qq.com/open/js/jweixin-1.0.0.js" ></script>
+<script src="http://res.wx.qq.com/open/js/jweixin-1.2.0.js" ></script>
 <script>
 	wx.ready(function(){
 		wx.chooseWXPay({

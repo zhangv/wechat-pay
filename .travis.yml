@@ -16,4 +16,4 @@ before_install:
 install: travis_retry composer install
 
 script:
-  - ./vendor/bin/phpunit test/*MockTest.php
+  - ./vendor/bin/phpunit test/WechatPayMockTest.php test/HttpClientTest.php
