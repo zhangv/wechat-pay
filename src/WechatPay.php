@@ -89,12 +89,13 @@ class WechatPay {
 	}
 
 	/**
-	 * 获取JSAPI的prepay_id
+	 * 获取JSAPI(公众号/小程序)的预支付单信息(prepay_id)
 	 * @ref https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
 	 * @param $body string 内容
 	 * @param $out_trade_no string 商户订单号
 	 * @param $total_fee int 总金额
 	 * @param $openid string openid
+	 * @param $spbill_create_ip
 	 * @param $ext array
 	 * @return string
 	 */
@@ -112,12 +113,12 @@ class WechatPay {
 	}
 
 	/**
-	 * 获取APP的prepay_id(注意这里的appid是从开放平台申请的)
-	 * ref:https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=9_1
+	 * 获取APP的的预支付单信息(prepay_id)(注意这里的appid是从开放平台申请的)
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=9_1
 	 * @param $body string 内容
 	 * @param $out_trade_no string 商户订单号
 	 * @param $total_fee int 总金额
-	 * @param $spbill_create_ip string openid
+	 * @param $spbill_create_ip string 终端ID
 	 * @param $ext array
 	 * @return string
 	 */
@@ -139,15 +140,16 @@ class WechatPay {
 	 * @param $out_trade_no
 	 * @param $total_fee
 	 * @param $product_id
+	 * @param $spbill_create_ip string 本地IP
 	 * @param $ext array
 	 * @return null
 	 */
-	public function getCodeUrl($body,$out_trade_no,$total_fee,$product_id,$ext = null){
+	public function getCodeUrl($body,$out_trade_no,$total_fee,$product_id,$spbill_create_ip = null,$ext = null){
 		$data = ($ext && is_array($ext))?$ext:array();
 		$data["body"]         = $body;
 		$data["out_trade_no"] = $out_trade_no;
 		$data["total_fee"]    = $total_fee;
-		$data["spbill_create_ip"] = isset($_SERVER["REMOTE_ADDR"])?$_SERVER["REMOTE_ADDR"]:'';
+		$data["spbill_create_ip"] = $spbill_create_ip?:$_SERVER["SERVER_ADDR"];
 		$data["notify_url"]   = $this->config["notify_url"];
 		$data["trade_type"]   = self::TRADETYPE_NATIVE;
 		$data["product_id"]   = $product_id;
@@ -506,7 +508,7 @@ class WechatPay {
 	}
 
 	/**
-	 * 获取JS支付/APP支付使用的第二个参数
+	 * 获取支付参数(JSAPI - 公众号/小程序支付 , APP - APP支付)
 	 * @param $prepay_id string 预支付ID
 	 * @param $trade_type string 支付类型
 	 * @return array

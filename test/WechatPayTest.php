@@ -49,7 +49,7 @@ class WechatPayTest extends TestCase{
 
 	public function testGetCodeUrl(){
 		$outtradeno = $this->genOutTradeNo();
-		$result = $this->wechatPay->getCodeUrl("test", "$outtradeno", 1, "test{$outtradeno}", 'ext');
+		$result = $this->wechatPay->getCodeUrl("test", "$outtradeno", 1, "test{$outtradeno}", '127.0.0.1','ext');
 		$this->assertEquals('SUCCESS',$this->wechatPay->responseArray['return_code']);
 		$this->assertEquals(WechatPay::TRADETYPE_NATIVE,$this->wechatPay->responseArray['trade_type']);
 		$this->assertNotNull($result);
