@@ -32,13 +32,15 @@ class WechatPay {
 	const URL_QUERY_TRANSFER_WALLET = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gettransferinfo';
 	const URL_TRANSFER_BANKCARD = 'https://api.mch.weixin.qq.com/mmpaysptrans/pay_bank';
 	const URL_QUERY_TRANSFER_BANKCARD = 'https://api.mch.weixin.qq.com/mmpaysptrans/query_bank';
+
 	const URL_GETPUBLICKEY = 'https://fraud.mch.weixin.qq.com/risk/getpublickey';
-	public static $BANKCODE = [
-		'工商银行' => '1002', '农业银行' => '1005', '中国银行' => '1026', '建设银行' => '1003', '招商银行' => '1001',
-		'邮储银行' => '1066', '交通银行' => '1020', '浦发银行' => '1004', '民生银行' => '1006', '兴业银行' => '1009',
-		'平安银行' => '1010', '中信银行' => '1021', '华夏银行' => '1025', '广发银行' => '1027', '光大银行' => '1022',
-		'北京银行' => '1032', '宁波银行' => '1056',
-	];
+	public static $BANKCODE = ['工商银行' => '1002', '农业银行' => '1005', '中国银行' => '1026', '建设银行' => '1003', '招商银行' => '1001',
+		'邮储银行' => '1066', '交通银行' => '1020', '浦发银行' => '1004', '民生银行' => '1006', '兴业银行' => '1009', '平安银行' => '1010',
+		'中信银行' => '1021', '华夏银行' => '1025', '广发银行' => '1027', '光大银行' => '1022', '北京银行' => '1032', '宁波银行' => '1056',];
+
+	public $getSignKeyUrl = "https://api.mch.weixin.qq.com/sandboxnew/pay/getsignkey";
+	public $sandbox = false;
+
 	/** @var string */
 	public $returnCode;
 	/** @var string */
@@ -821,6 +823,18 @@ class WechatPay {
 		return $result;
 	}
 
+	/**
+	 * sandbox环境获取验签秘钥
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=23_1
+	 * @return array
+	 */
+	public function getSignKey(){
+		$data = array();
+		$data["mch_id"] = $this->config["mch_id"];
+		$result = $this->post($this->getSignKeyUrl,$data,false);
+		return $result['sandbox_signkey'];
+	}
+
 	public function getSignPackage($url){
 		$jsapiTicket = $this->getJSAPITicket();
 		$timestamp = time();
@@ -874,7 +888,11 @@ class WechatPay {
 			$opts[CURLOPT_SSLKEYTYPE] = 'PEM';
 			$opts[CURLOPT_SSLKEY] = $this->config['ssl_key_path'];
 		}
-
+		if($this->sandbox == true){
+			$host = "https://api.mch.weixin.qq.com";
+			$url = str_replace($host,'',$url);
+			$url = "{$host}/sandboxnew{$url}";
+		}
 		$content = $this->httpClient->post($url,$this->requestXML,[],$opts);
 		if(!$content) throw new Exception("Empty response with {$this->requestXML}");
 
@@ -886,7 +904,7 @@ class WechatPay {
 			throw new Exception("No return code presents in {$this->responseXML}");
 		}
 		$this->returnCode = $result["return_code"];
-		if ($this->returnCode == "SUCCESS" && $result["result_code"] == "SUCCESS") {
+		if ($this->returnCode == "SUCCESS") {
 			return $result;
 		} else {
 			if($result["return_code"] == "FAIL"){

@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ ."/../src/WechatOAuth.php";
+require_once __DIR__ ."/../src/HttpClient.php";
 use zhangv\wechat\WechatOAuth;
 
 $cfg = require './config.php';
-$appid = $cfg['appid'];
-$redirect = "http://{$_SERVER['HTTP_HOST']}/demo/wxoauthcallback.php";
+$appid = $cfg['app_id'];
+$redirect = "http://{$_SERVER['HTTP_HOST']}/wechat-pay/demo/wxoauthcallback.php";
 $scope = 'snsapi_userinfo';
 $state = "";
-$oauth =new WechatOAuth($appid,$cfg['appsecret']);
+$oauth =new WechatOAuth($appid,$cfg['app_secret']);
 $url = $oauth->authorizeURI($redirect,$scope);
-$this->redirect($url);
+
+header('Location: '.$redirect);

@@ -12,25 +12,40 @@ composer require zhangv/wechat-pay
 or
 
 ```
-"zhangv/wechat-pay":">1.2.5"
+"zhangv/wechat-pay":"=1.3.1"
 ```
 
 Step1 - Configuration
 ```php
 return [
 	'mch_id' => 'XXXX', //商户号
-	'appid' => 'XXXXXXXXXXXXXXXXXXX', //APPID
-	'appsecret' => 'XXXXXXXXXXXXXXXXXXXXXXXXX', //App Secret
-	'apikey' =>'XXXXXXXXXXXXXXXXXXXXXXX', //支付密钥
-	'sslcertPath' => '/PATHTO/apiclient_cert.pem',
-	'sslkeyPath' => '/PATHTO/apiclient_key.pem',
-	'signType' => 'MD5',
+	'app_id' => 'XXXXXXXXXXXXXXXXXXX', //APPID
+	'app_secret' => 'XXXXXXXXXXXXXXXXXXXXXXXXX', //App Secret
+	'api_key' =>'XXXXXXXXXXXXXXXXXXXXXXX', //支付密钥
+	'ssl_cert_path' => __DIR__ . '/keys/apiclient_cert.pem',
+	'ssl_key_path' => __DIR__ .'/keys/apiclient_key.pem',
+	'sign_type' => 'MD5',
 	'notify_url' => 'http://YOURSITE/paidnotify.php',
-	'refundnotify_url' => 'http://YOURSITE/refundednotify.php',
+	'refund_notify_url' => 'http://YOURSITE/refundednotify.php',
+	'h5_scene_info' => [//required in H5
+		'h5_info' => ['type' => 'Wap', 'wap_url' => 'http://wapurl', 'wap_name' => 'wapname']
+	],
+	'rsa_pubkey_path' => __DIR__ .'/keys/pubkey.pem',
+	'jsapi_ticket' => __DIR__ .'/jsapi_ticket.json'
 ];
 ```
 Step2 - Pay
 ```php
+ require_once __DIR__ ."/../src/WechatPay.php";
+ use zhangv\wechat\WechatPay;
+ $cfg = include './config.php';
+ 
+ if(empty( $_REQUEST['openid'])) {
+ 	$redirect = "http://{$_SERVER['HTTP_HOST']}/demo/wxoauth.php";
+ 	$this->redirect($url);
+ 	exit;
+ }
+ 
  $payment = new WechatPay($cfg);
  $openid = $_REQUEST['openid'];
  $stamp = date('YmdHis');
@@ -40,7 +55,7 @@ Step2 - Pay
  $prepay_id = $payment->getPrepayId("$desc", "$stamp", $amt, $openid, $ext);
  $package = $payment->getPackage($prepay_id);
  ?>
- <script src="http://res.wx.qq.com/open/js/jweixin-1.0.0.js" ></script>
+ <script src="http://res.wx.qq.com/open/js/jweixin-1.2.0.js" ></script>
  <script>
  	wx.ready(function(){
  		wx.chooseWXPay({
@@ -55,7 +70,6 @@ Step2 - Pay
  				alert('支付成功！');
  			}
  		});
- 		// config信息验证后会执行ready方法，所有接口调用都必须在config接口获得结果之后，config是一个客户端的异步操作，所以如果需要在页面加载时就调用相关接口，则须把相关接口放在ready函数中调用来确保正确执行。对于用户触发时才调用的接口，则可以直接调用，不需要放在ready函数中。
  	});
  	wx.error(function(res){// config信息验证失败会执行error函数，如签名过期导致验证失败，具体错误信息可以打开config的debug模式查看，也可以在返回的res参数中查看，对于SPA可以在这里更新签名。
  		alert(res);

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ ."/../src/WechatOAuth.php";
+require_once __DIR__ ."/../src/HttpClient.php";
 use zhangv\wechat\WechatOAuth;
 
 if (isset($_GET['code'])){
@@ -7,7 +8,7 @@ if (isset($_GET['code'])){
 
 	$code = trim($_GET['code']);
 	$state = trim($_GET['state']);
-	$oauth = new WechatOAuth($cfg['appid'],$cfg['appsecret']);
+	$oauth = new WechatOAuth($cfg['app_id'],$cfg['app_secret']);
 	$at = $oauth->authorize($code);
 
 	if(!$at || empty($at->openid)){
@@ -15,7 +16,7 @@ if (isset($_GET['code'])){
 	}else{
 		$accesstoken = $at->access_token;
 		$openid = $at->openid;
-		$this->redirect("http://{$_SERVER['HTTP_HOST']}/demo/pay.php?openid=$openid");
+		header('Location: '."http://{$_SERVER['HTTP_HOST']}/wechat-pay/demo/pay.php?openid=$openid");
 	}
 }else{
 	die('授权失败，请重试。');
