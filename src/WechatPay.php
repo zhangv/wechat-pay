@@ -976,7 +976,8 @@ class WechatPay {
 			throw new Exception("No return code presents in {$this->responseXML}");
 		}
 		$this->returnCode = $result["return_code"];
-		$this->returnMsg = $result['return_msg'];
+		$this->returnMsg = isset($result['return_msg'])?$result['return_msg']:'';
+
 		if ($this->returnCode == "SUCCESS") {
 			if(isset($result['result_code']) && $result['result_code'] == "FAIL"){
 				$this->resultCode = $result['result_code'];
