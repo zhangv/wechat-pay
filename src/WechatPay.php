@@ -21,17 +21,22 @@ class WechatPay {
 	const URL_REPORT = 'https://api.mch.weixin.qq.com/payitil/report';
 	const URL_SHORTURL = 'https://api.mch.weixin.qq.com/tools/shorturl';
 	const URL_MICROPAY = 'https://api.mch.weixin.qq.com/pay/micropay';
-	const URL_SENDREDPACK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack';
-	const URL_SENDGROUPREDPACK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendgroupredpack';
 	const URL_GETHBINFO = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo';
 	const URL_BATCHQUERYCOMMENT = 'https://api.mch.weixin.qq.com/billcommentsp/batchquerycomment';
 	const URL_REVERSE = 'https://api.mch.weixin.qq.com/secapi/pay/reverse';
 	const URL_AUTHCODETOOPENID = 'https://api.mch.weixin.qq.com/tools/authcodetoopenid';
+	/** 红包 */
+	const URL_SENDREDPACK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack';
+	const URL_SENDGROUPREDPACK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendgroupredpack';
 	/** 企业付款 */
 	const URL_TRANSFER_WALLET = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers';
 	const URL_QUERY_TRANSFER_WALLET = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gettransferinfo';
 	const URL_TRANSFER_BANKCARD = 'https://api.mch.weixin.qq.com/mmpaysptrans/pay_bank';
 	const URL_QUERY_TRANSFER_BANKCARD = 'https://api.mch.weixin.qq.com/mmpaysptrans/query_bank';
+	/** 代金券 */
+	const URL_SEND_COUPON = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/send_coupon';
+	const URL_QUERY_COUPON_STOCK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/query_coupon_stock';
+	const URL_QUERY_COUPON_INFO = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/querycouponsinfo';
 
 	const URL_GETPUBLICKEY = 'https://fraud.mch.weixin.qq.com/risk/getpublickey';
 	public static $BANKCODE = ['工商银行' => '1002', '农业银行' => '1005', '中国银行' => '1026', '建设银行' => '1003', '招商银行' => '1001',
@@ -138,6 +143,7 @@ class WechatPay {
 
 	/**
 	 * 扫码支付(模式二)获取支付二维码
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=9_1
 	 * @param $body
 	 * @param $out_trade_no
 	 * @param $total_fee
@@ -766,6 +772,62 @@ class WechatPay {
 	}
 
 	/**
+	 * 发放代金券
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/sp_coupon.php?chapter=12_3&index=4
+	 * @param $coupon_stock_id
+	 * @param $open_id
+	 * @param $partner_trade_no
+	 * @param string $op_user_id
+	 * @param array $ext
+	 * @return array
+	 */
+	public function sendCoupon($coupon_stock_id,$open_id,$partner_trade_no,$op_user_id = '',$ext = []){
+		$data = array();
+		$data["partner_trade_no"] = $partner_trade_no;
+		$data["coupon_stock_id"] = $coupon_stock_id;
+		$data["openid_count"] = 1;
+		$data["open_id"] = $open_id;
+		$data["op_user_id"] = $op_user_id;
+		$result = $this->post(self::URL_SEND_COUPON,$data,true);
+		return $result;
+	}
+
+	/**
+	 * 查询代金券批次
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/sp_coupon.php?chapter=12_4&index=5
+	 * @param $coupon_stock_id
+	 * @param string $op_user_id
+	 * @return array
+	 */
+	public function queryCouponStock($coupon_stock_id,$op_user_id = ''){
+		$data = array();
+		$data["coupon_stock_id"] = $coupon_stock_id;
+		$data["op_user_id"] = $op_user_id;
+		$result = $this->post(self::URL_QUERY_COUPON_STOCK,$data,false);
+		return $result;
+	}
+
+	/**
+	 * 查询代金券信息
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/sp_coupon.php?chapter=12_5&index=6
+	 * @param $coupon_id
+	 * @param $open_id
+	 * @param $stock_id
+	 * @param string $op_user_id
+	 * @param array $ext
+	 * @return array
+	 */
+	public function queryCouponsInfo($coupon_id,$open_id,$stock_id,$op_user_id = '',$ext = []){
+		$data = array();
+		$data["coupon_id"] = $coupon_id;
+		$data["stock_id"] = $stock_id;
+		$data["open_id"] = $open_id;
+		$data["op_user_id"] = $op_user_id;
+		$result = $this->post(self::URL_QUERY_COUPON_INFO,$data,false);
+		return $result;
+	}
+
+	/**
 	 * 获取RSA加密公钥
 	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=24_7&index=4
 	 * @param $refresh
@@ -888,6 +950,10 @@ class WechatPay {
 			$opts[CURLOPT_SSLKEYTYPE] = 'PEM';
 			$opts[CURLOPT_SSLKEY] = $this->config['ssl_key_path'];
 		}
+		$processResponse = true;
+		if(in_array($url,[self::URL_DOWNLOADBILL])){
+			$processResponse = false;
+		}
 		if($this->sandbox == true){
 			$host = "https://api.mch.weixin.qq.com";
 			$url = str_replace($host,'',$url);
@@ -897,18 +963,31 @@ class WechatPay {
 		if(!$content) throw new Exception("Empty response with {$this->requestXML}");
 
 		$this->responseXML = $content;
+		if($processResponse)
+			return $this->processResponseXML($this->responseXML);
+		else return $this->responseXML;
 
-		$result = $this->xml2array($content);
+	}
+
+	private function processResponseXML($responseXML){
+		$result = $this->xml2array($responseXML);
 		$this->responseArray = $result;
 		if(empty($result['return_code'])){
 			throw new Exception("No return code presents in {$this->responseXML}");
 		}
 		$this->returnCode = $result["return_code"];
+		$this->returnMsg = $result['return_msg'];
 		if ($this->returnCode == "SUCCESS") {
-			return $result;
+			if(isset($result['result_code']) && $result['result_code'] == "FAIL"){
+				$this->resultCode = $result['result_code'];
+				$this->errCode = $result['err_code'];
+				$this->errCodeDes = $result['err_code_des'];
+				throw new Exception("[$this->errCode]$this->errCodeDes");
+			}else{
+				return $result;
+			}
 		} else {
 			if($result["return_code"] == "FAIL"){
-				$this->returnMsg = $result['return_msg'];
 				throw new Exception($this->returnMsg);
 			}else{
 				$this->resultCode = $result['result_code'];
