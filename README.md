@@ -12,7 +12,7 @@ composer require zhangv/wechat-pay
 or
 
 ```
-"zhangv/wechat-pay":"=1.3.1"
+"zhangv/wechat-pay":"1.3.1"
 ```
 
 Step1 - Configuration
@@ -41,8 +41,8 @@ Step2 - Pay
  $cfg = include './config.php';
  
  if(empty( $_REQUEST['openid'])) {
- 	$redirect = "http://{$_SERVER['HTTP_HOST']}/demo/wxoauth.php";
- 	$this->redirect($url);
+ 	$redirect = "http://{$_SERVER['HTTP_HOST']}/wechat-pay/demo/wxoauth.php";
+ 	header('Location: '.$redirect);
  	exit;
  }
  
