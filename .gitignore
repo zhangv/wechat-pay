@@ -1,5 +1,4 @@
 .idea
-composer.lock
 vendor
 /test/config.php
-/test/keys/
+cert/*
