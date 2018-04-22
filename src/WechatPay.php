@@ -696,11 +696,15 @@ class WechatPay {
 	 * @return mixed
 	 */
 	public function authCodeToOpenId($auth_code){
-		$data = array();
-		$data["appid"] = $this->config["app_id"];
-		$data["auth_code"] = $auth_code;
-		$result = $this->post(self::URL_AUTHCODETOOPENID,$data,false);
-		return $result['openid'];
+		// $data = array();
+		// $data["appid"] = $this->config["app_id"];
+		// $data["auth_code"] = $auth_code;
+		// $result = $this->post(self::URL_AUTHCODETOOPENID,$data,false);
+		$appid = $this->config["app_id"];
+		$app_secret = $this->config["app_secret"];
+		$json = "https://api.weixin.qq.com/sns/jscode2session?appid=$appid&secret=$app_secret&js_code=$code&grant_type=authorization_code";
+		header("Content-Type: application/json");
+		return file_get_contents($json);
 	}
 
 	/**
