@@ -11,11 +11,14 @@ composer require zhangv/wechat-pay
 ```
 or
 
-```
-"zhangv/wechat-pay":"1.3.1"
-```
+add:
 
-Step1 - Configuration
+```
+"zhangv/wechat-pay":"1.3.4"
+```
+in composer.json
+
+Step 1 - Configuration
 ```php
 return [
 	'mch_id' => 'XXXX', //商户号
@@ -34,7 +37,7 @@ return [
 	'jsapi_ticket' => __DIR__ .'/jsapi_ticket.json'
 ];
 ```
-Step2 - Pay
+Step 2 - Pay
 ```php
  require_once __DIR__ ."/../src/WechatPay.php";
  use zhangv\wechat\WechatPay;
@@ -76,3 +79,6 @@ Step2 - Pay
  	});
  </script>
 ```
+Step 3 - handle the notify from wechat
+
+[paidnotify.php](demo/paidnotify.php)

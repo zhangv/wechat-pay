@@ -182,7 +182,7 @@ class WechatPay {
 		$data["spbill_create_ip"] = isset($_SERVER["REMOTE_ADDR"])?$_SERVER["REMOTE_ADDR"]:'';
 		$data["notify_url"]   = $this->config["notify_url"];
 		$data["trade_type"]   = self::TRADETYPE_MWEB;
-		if(!isset($this->config['h5_scene_info'])) throw new \Exception('h5_scene_info should be configured');
+		if(!isset($this->config['h5_scene_info'])) throw new Exception('h5_scene_info should be configured');
 		$data["scene_info"]   = json_encode($this->config['h5_scene_info']);
 		$result = $this->unifiedOrder($data);
 		return $result["mweb_url"];
@@ -397,7 +397,7 @@ class WechatPay {
 	/**
 	 * 下载对账单
 	 * @param $bill_date string 下载对账单的日期，格式：20140603
-	 * @param $bill_type string 类型
+	 * @param $bill_type string 类型 ALL|SUCCESS
 	 * @return array
 	 */
 	public function downloadBill($bill_date,$bill_type = 'ALL'){
@@ -433,7 +433,7 @@ class WechatPay {
 		$data["send_name"] = $send_name;
 		$data["re_openid"] = $re_openid;
 		$data["total_amount"] = $total_amount;
-		if($total_amount > 20000 && trim($scene_id)=='') throw new \Exception("scene_id is required when total_amount beyond 20000");
+		if($total_amount > 20000 && trim($scene_id)=='') throw new Exception("scene_id is required when total_amount beyond 20000");
 		$data["total_num"] = $total_num;
 		$data["wishing"] = $wishing;
 		$data["act_name"] = $act_name;
@@ -469,7 +469,7 @@ class WechatPay {
 		$data["send_name"] = $send_name;
 		$data["re_openid"] = $re_openid;
 		$data["total_amount"] = $total_amount;
-		if($total_amount > 20000 && trim($scene_id)=='') throw new \Exception("scene_id is required when total_amount beyond 20000(200rmb)");
+		if($total_amount > 20000 && trim($scene_id)=='') throw new Exception("scene_id is required when total_amount beyond 20000(200rmb)");
 		$data["total_num"] = $total_num;
 		$data["amt_type"] = 'ALL_RAND'; //红包金额设置方式 ALL_RAND—全部随机
 		$data["wishing"] = $wishing;
@@ -586,7 +586,7 @@ class WechatPay {
 				$this->responseNotify();
 			}
 		}else{
-			throw new \Exception('Invalid paid notify data');
+			throw new Exception('Invalid paid notify data');
 		}
 	}
 
@@ -608,7 +608,7 @@ class WechatPay {
 				$this->responseNotify();
 			}
 		}else{
-			throw new \Exception('Invalid refunded notify data');
+			throw new Exception('Invalid refunded notify data');
 		}
 	}
 
@@ -905,6 +905,10 @@ class WechatPay {
 		return $result['sandbox_signkey'];
 	}
 
+	/**
+	 * 获取JSAPI所需要的页面参数
+	 * @return array
+	 */
 	public function getSignPackage($url){
 		$jsapiTicket = $this->getJSAPITicket();
 		$timestamp = time();
@@ -923,6 +927,10 @@ class WechatPay {
 		return $signPackage;
 	}
 
+	/**
+	 * 获取JSAPI Ticket
+	 * @return string
+	 */
 	public function getJSAPITicket(){
 		if(isset($this->config['jsapi_ticket']) && file_exists($this->config['jsapi_ticket'])){
 			$data = json_decode(file_get_contents($this->config['jsapi_ticket']));
@@ -1020,7 +1028,7 @@ class WechatPay {
 			$sign = strtoupper(md5($stringSignTemp));
 		}elseif($sign_type == WechatPay::SIGNTYPE_HMACSHA256){
 			$sign = strtoupper(hash_hmac('sha256',$stringSignTemp,$this->config["api_key"]));
-		}else throw new \Exception("Not supported sign type - $sign_type");
+		}else throw new Exception("Not supported sign type - $sign_type");
 		return $sign;
 	}
 
@@ -1039,7 +1047,7 @@ class WechatPay {
 		$tmp = array();
 		try{
 			$tmp = (array) simplexml_load_string($xml);
-		}catch(\Exception $e){}
+		}catch(Exception $e){}
 		foreach ( $tmp as $k => $v) {
 			$array[$k] = (string) $v;
 		}
