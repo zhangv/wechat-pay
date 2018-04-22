@@ -1,4 +1,8 @@
 <?php
+
+require_once __DIR__ ."/../src/WechatPay.php";
+use zhangv\wechat\WechatPay;
+
 $xml = file_get_contents("php://input");
 
 $cfg = require './config.php';

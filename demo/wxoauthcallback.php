@@ -1,4 +1,6 @@
 <?php
+
+//OAuth授权回调
 require_once __DIR__ ."/../src/WechatOAuth.php";
 require_once __DIR__ ."/../src/HttpClient.php";
 use zhangv\wechat\WechatOAuth;

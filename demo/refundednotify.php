@@ -1,4 +1,5 @@
 <?php
+
 require_once __DIR__ ."/../src/WechatPay.php";
 use zhangv\wechat\WechatPay;
 
