@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<phpdox xmlns="http://xml.phpdox.net/config">
+	<project name="wechat-pay" source="${basedir}/src" workdir="${basedir}/build/phpdox/xml">
+		<collector backend="parser" />
+		<generator output="${basedir}/build/phpdox">
+			<build engine="html" output="html">
+				<template dir="${phpDox.home}/templates/html" />
+				<file extension="html" />
+			</build>
+			<enrich base="${basedir}/build/logs">
+				<source type="build" />
+				<source type="phploc">
+					<file name="phploc.xml" />
+				</source>
+				<!-- git vcs information -->
+				<source type="git">
+					<git binary="git" />
+					<history enabled="true" cache="${phpDox.project.workdir}/gitlog.xml" />
+				</source>
+
+				<!-- PHP Code Sniffer findings -->
+				<source type="phpcs">
+					<file name="phpcs.xml" />
+				</source>
+
+				<!-- PHPMessDetector -->
+				<source type="pmd">
+					<file name="pmd.xml" />
+				</source>
+				<source type="phpunit">
+					<coverage path="../coverage-xml" />
+				</source>
+			</enrich>
+		</generator>
+	</project>
+</phpdox>

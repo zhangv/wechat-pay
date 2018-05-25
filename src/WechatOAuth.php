@@ -4,7 +4,6 @@
  * @author zhangv
  */
 namespace zhangv\wechat;
-use zhangv\wechat\HttpClient;
 
 class WechatOAuth {
 

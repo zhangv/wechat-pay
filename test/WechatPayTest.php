@@ -14,10 +14,10 @@ class WechatPayTest extends TestCase{
 
 	public function setUp(){
 		$config = [
-			'mch_id' => 'XXXX', //商户号
-			'app_id' => 'XXXXXXXXXXXXXXXXXXX', //APPID
+			'mch_id'     => 'XXXXXXXX',
+			'app_id'     => 'XXXXXXXXXXXXXXXXXXX', //APPID
 			'app_secret' => 'XXXXXXXXXXXXXXXXXXXXXXXXX', //App Secret
-			'api_key' =>'XXXXXXXXXXXXXXXXXXXXXXX', //支付密钥
+			'api_key'    =>'XXXXXXXXXXXXXXXXXXXXXXX', //支付密钥
 			'ssl_cert_path' => '/PATHTO/apiclient_cert.pem',
 			'ssl_key_path' => '/PATHTO/apiclient_key.pem',
 			'sign_type' => 'MD5',
@@ -28,7 +28,7 @@ class WechatPayTest extends TestCase{
 			],
 			'rsa_pubkey_path' => '/PATHTO/pubkey.pem'
 		];
-		if(file_exists(__DIR__ . '/config.php')) $config = require __DIR__ . '/config.php';
+//		if(file_exists(__DIR__ . '/config.php')) $config = require __DIR__ . '/config.php';
 		$this->wechatPay = new WechatPay($config);
 		$this->openid = "o6JMpuDgLS-L4uvjE6VsIkAEMNM8";
 		$this->bankNo = 'ICBCSUCKS';
@@ -141,7 +141,7 @@ class WechatPayTest extends TestCase{
 		$this->assertNotNull($result);
 	}
 
-	public function notestTransferWallet(){
+	public function testTransferWallet(){
 		$outtradeno = $this->genOutTradeNo();
 		$result = null;
 		try{

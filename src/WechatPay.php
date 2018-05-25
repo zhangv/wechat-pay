@@ -11,6 +11,7 @@ class WechatPay {
 	const TRADETYPE_JSAPI = 'JSAPI',TRADETYPE_NATIVE = 'NATIVE',TRADETYPE_APP = 'APP',TRADETYPE_MWEB = 'MWEB';
 	const SIGNTYPE_MD5 = 'MD5', SIGNTYPE_HMACSHA256 = 'HMAC-SHA256';
 	const CHECKNAME_FORCECHECK = 'FORCE_CHECK',CHECKNAME_NOCHECK = 'NO_CHECK';
+	const ACCOUNTTYPE_BASIC = 'Basic',ACCOUNTTYPE_OPERATION = 'Operation',ACCOUNTTYPE_FEES = 'Fees';
 	/** 支付 */
 	const URL_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder";
 	const URL_ORDERQUERY = "https://api.mch.weixin.qq.com/pay/orderquery";
@@ -18,6 +19,7 @@ class WechatPay {
 	const URL_REFUND = 'https://api.mch.weixin.qq.com/secapi/pay/refund';
 	const URL_REFUNDQUERY = 'https://api.mch.weixin.qq.com/pay/refundquery';
 	const URL_DOWNLOADBILL = 'https://api.mch.weixin.qq.com/pay/downloadbill';
+	const URL_DOWNLOAD_FUND_FLOW = 'https://api.mch.weixin.qq.com/pay/downloadfundflow';
 	const URL_REPORT = 'https://api.mch.weixin.qq.com/payitil/report';
 	const URL_SHORTURL = 'https://api.mch.weixin.qq.com/tools/shorturl';
 	const URL_MICROPAY = 'https://api.mch.weixin.qq.com/pay/micropay';
@@ -104,6 +106,7 @@ class WechatPay {
 	 * @param $spbill_create_ip
 	 * @param $ext array
 	 * @return string
+	 * @throws \Exception
 	 */
 	public function getPrepayId($body,$out_trade_no,$total_fee,$openid,$spbill_create_ip = null,$ext = null) {
 		$data = ($ext && is_array($ext))?$ext:array();
@@ -113,6 +116,7 @@ class WechatPay {
 		$data["spbill_create_ip"] = $spbill_create_ip?:$_SERVER["REMOTE_ADDR"];
 		$data["notify_url"]   = $this->config["notify_url"];
 		$data["trade_type"]   = WechatPay::TRADETYPE_JSAPI;
+		if(!$openid) throw new Exception('openid is required when trade_type is JSAPI');
 		$data["openid"]   = $openid;
 		$result = $this->unifiedOrder($data);
 		return $result["prepay_id"];
@@ -149,7 +153,8 @@ class WechatPay {
 	 * @param $product_id
 	 * @param $spbill_create_ip string 本地IP
 	 * @param $ext array
-	 * @return null
+	 * @return string
+	 * @throws Exception
 	 */
 	public function getCodeUrl($body,$out_trade_no,$total_fee,$product_id,$spbill_create_ip = null,$ext = null){
 		$data = ($ext && is_array($ext))?$ext:array();
@@ -159,6 +164,7 @@ class WechatPay {
 		$data["spbill_create_ip"] = $spbill_create_ip?:$_SERVER["SERVER_ADDR"];
 		$data["notify_url"]   = $this->config["notify_url"];
 		$data["trade_type"]   = self::TRADETYPE_NATIVE;
+		if(!$product_id) throw new Exception('product_id is required when trade_type is NATIVE');
 		$data["product_id"]   = $product_id;
 		$result = $this->unifiedOrder($data);
 		return $result["code_url"];
@@ -192,9 +198,10 @@ class WechatPay {
 	 * 统一下单接口
 	 * @ref https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
 	 * @param array $params
+	 * @throws Exception
 	 * @return string JSON
 	 */
-	private function unifiedOrder($params) {
+	public function unifiedOrder($params) {
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["device_info"] = (isset($params['device_info'])&&trim($params['device_info'])!='')?$params['device_info']:null;
@@ -210,8 +217,14 @@ class WechatPay {
 		$data["goods_tag"] = isset($params['goods_tag'])?$params['goods_tag']:null;
 		$data["notify_url"] = $this->config["notify_url"];
 		$data["trade_type"] = $params['trade_type'];
-		$data["product_id"] = isset($params['product_id'])?$params['product_id']:null;//required when trade_type = NATIVE
-		$data["openid"] = isset($params['openid'])?$params['openid']:null;//required when trade_type = JSAPI
+		if($params['trade_type'] == WechatPay::TRADETYPE_NATIVE){
+			if(!isset($params['product_id'])) throw new Exception('product_id is required when trade_type is NATIVE');
+			$data["product_id"] = $params['product_id'];
+		}
+		if($params['trade_type'] == WechatPay::TRADETYPE_JSAPI){
+			if(!isset($params['openid'])) throw new Exception('openid is required when trade_type is JSAPI');
+			$data["openid"] = $params['openid'];
+		}
 		$result = $this->post(self::URL_UNIFIEDORDER, $data);
 		return $result;
 	}
@@ -396,6 +409,7 @@ class WechatPay {
 
 	/**
 	 * 下载对账单
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_6
 	 * @param $bill_date string 下载对账单的日期，格式：20140603
 	 * @param $bill_type string 类型 ALL|SUCCESS
 	 * @return array
@@ -406,6 +420,24 @@ class WechatPay {
 		$data["bill_date"] = $bill_date;
 		$data["bill_type"] = $bill_type;
 		$result = $this->post(self::URL_DOWNLOADBILL, $data);
+		return $result;
+	}
+
+	/**
+	 * 下载资金账单
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_18&index=7
+	 * @param $bill_date string 资金账单日期，格式：20140603
+	 * @param $account_type string 资金账户类型 Basic|Operation|Fees
+	 * @param $tar_type string 压缩账单
+	 * @return array
+	 */
+	public function downloadFundFlow($bill_date,$account_type = self::ACCOUNTTYPE_BASIC,$tar_type = 'GZIP'){
+		$data = array();
+		$data["appid"] = $this->config["app_id"];
+		$data["bill_date"] = $bill_date;
+		$data["account_type"] = $account_type;
+		$data["tar_type"] = $tar_type;
+		$result = $this->post(self::URL_DOWNLOAD_FUND_FLOW, $data);
 		return $result;
 	}
 
@@ -692,6 +724,7 @@ class WechatPay {
 
 	/**
 	 * 授权码查询openid
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_13&index=10
 	 * @param $auth_code
 	 * @return mixed
 	 */
@@ -760,7 +793,7 @@ class WechatPay {
 	 * @throws Exception
 	 */
 	public function transferBankCard($partner_trade_no,$bank_no,$true_name,$bank_code,$amount,$desc){
-		if(!in_array($bank_code,array_values(self::$BANKCODE))) throw new Exception("Unsupported bank code - $bank_code");
+		if(!in_array($bank_code,array_values(self::$BANKCODE))) throw new Exception("Unsupported bank code: $bank_code");
 		$data = array();
 		$data["partner_trade_no"] = $partner_trade_no;
 		$enc_bank_no = $this->rsaEncrypt($bank_no);
@@ -771,6 +804,21 @@ class WechatPay {
 		$data["desc"] = $desc;
 		$data["amount"] = $amount;
 		$result = $this->post(self::URL_TRANSFER_BANKCARD,$data,true);
+		return $result;
+	}
+
+	/**
+	 * 查询企业付款银行卡
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=24_3
+	 * @param $partner_trade_no
+	 * @return array
+	 */
+	public function queryTransferBankCard($partner_trade_no){
+		$data = array();
+		$data["appid"] = $this->config["app_id"];
+		$data["mch_id"] = $this->config["mch_id"];
+		$data["partner_trade_no"] = $partner_trade_no;
+		$result = $this->post(self::URL_QUERY_TRANSFER_WALLET,$data,true);
 		return $result;
 	}
 
@@ -867,7 +915,7 @@ class WechatPay {
 		return $key;
 	}
 
-	public function rsaEncrypt($data){
+	private function rsaEncrypt($data){
 		$pubkey = $this->getPublicKey();
 		$encrypted = null;
 		$pubkey = openssl_get_publickey($pubkey);
@@ -876,21 +924,6 @@ class WechatPay {
 		else
 			throw new Exception('Unable to encrypt data');
 		return $data;
-	}
-
-	/**
-	 * 查询企业付款银行卡
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=24_3
-	 * @param $partner_trade_no
-	 * @return array
-	 */
-	public function queryTransferBankCard($partner_trade_no){
-		$data = array();
-		$data["appid"] = $this->config["app_id"];
-		$data["mch_id"] = $this->config["mch_id"];
-		$data["partner_trade_no"] = $partner_trade_no;
-		$result = $this->post(self::URL_QUERY_TRANSFER_WALLET,$data,true);
-		return $result;
 	}
 
 	/**
@@ -967,7 +1000,7 @@ class WechatPay {
 			$opts[CURLOPT_SSLKEY] = $this->config['ssl_key_path'];
 		}
 		$processResponse = true;
-		if(in_array($url,[self::URL_DOWNLOADBILL])){
+		if(in_array($url,[self::URL_DOWNLOADBILL,self::URL_DOWNLOAD_FUND_FLOW])){
 			$processResponse = false;
 		}
 		if($this->sandbox === true){
@@ -1047,7 +1080,9 @@ class WechatPay {
 		$tmp = array();
 		try{
 			$tmp = (array) simplexml_load_string($xml);
-		}catch(Exception $e){}
+		}catch(Exception $e){
+			throw $e;
+		}
 		foreach ( $tmp as $k => $v) {
 			$array[$k] = (string) $v;
 		}

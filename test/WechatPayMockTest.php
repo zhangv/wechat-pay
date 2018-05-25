@@ -1,19 +1,13 @@
 <?php
-require_once __DIR__ . '/../src/WechatPay.php';
-require_once __DIR__ . '/../src/WechatOAuth.php';
-require_once __DIR__ . '/../src/HttpClient.php';
+require_once __DIR__ . "/../demo/autoload.php";
 use PHPUnit\Framework\TestCase;
 use zhangv\wechat\WechatPay;
 use zhangv\wechat\HttpClient;
 
 class WechatPayMockTest extends TestCase{
-	/**
-	 * @var WechatPay
-	 */
+	/** @var WechatPay */
 	private $wechatPay;
-	/**
-	 * @var HttpClient
-	 */
+	/** @var HttpClient */
 	private $httpClient;
 
 	public function setUp(){
@@ -30,13 +24,14 @@ class WechatPayMockTest extends TestCase{
 			'h5_scene_info' => [//required in H5
 				'h5_info' => ['type' => 'Wap', 'wap_url' => 'http://wapurl', 'wap_name' => 'wapname']
 			],
-			'rsa_pubkey_path' => '/PATHTO/pubkey.pem'
+			'rsa_pubkey_path' => __DIR__ .'/pubkey.pem'
 		];
 		$this->wechatPay = new WechatPay($config);
 		$this->httpClient = $this->createMock(HttpClient::class);
 	}
 
-	public function testGetPrepayId(){
+	/** @test */
+	public function getPrepayId(){
 		$this->httpClient->method('post')->willReturn(
 			"<xml><return_code>SUCCESS</return_code><result_code>SUCCESS</result_code><prepay_id>fakeprepay_id</prepay_id></xml>");
 		$this->wechatPay->setHttpClient($this->httpClient);
@@ -45,12 +40,561 @@ class WechatPayMockTest extends TestCase{
 		$this->assertEquals($result,'fakeprepay_id');
 	}
 
+	/** @test */
+	public function getCodeUrl(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code>SUCCESS</return_code>
+				<result_code>SUCCESS</result_code>
+				<code_url>url</code_url>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+
+		$result = $this->wechatPay->getCodeUrl("", "", 1, 'openid', 'ext');
+		$this->assertEquals($result,'url');
+	}
+
+	/** @test */
+	public function getMwebUrl(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code>SUCCESS</return_code>
+				<result_code>SUCCESS</result_code>
+				<mweb_url>url</mweb_url>
+				<trade_type>MWEB</trade_type>
+				<prepay_id>xxx</prepay_id>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+
+		$result = $this->wechatPay->getMwebUrl("", "", 1, 'ext');
+		$this->assertEquals($result,'url');
+	}
+	/** @test */
+	public function queryOrder(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+			   <return_code><![CDATA[SUCCESS]]></return_code>
+			   <return_msg><![CDATA[OK]]></return_msg>
+			   <appid><![CDATA[wx2421b1c4370ec43b]]></appid>
+			   <mch_id><![CDATA[10000100]]></mch_id>
+			   <device_info><![CDATA[1000]]></device_info>
+			   <nonce_str><![CDATA[TN55wO9Pba5yENl8]]></nonce_str>
+			   <sign><![CDATA[BDF0099C15FF7BC6B1585FBB110AB635]]></sign>
+			   <result_code><![CDATA[SUCCESS]]></result_code>
+			   <openid><![CDATA[oUpF8uN95-Ptaags6E_roPHg7AG0]]></openid>
+			   <is_subscribe><![CDATA[Y]]></is_subscribe>
+			   <trade_type><![CDATA[MICROPAY]]></trade_type>
+			   <bank_type><![CDATA[CCB_DEBIT]]></bank_type>
+			   <total_fee>1</total_fee>
+			   <fee_type><![CDATA[CNY]]></fee_type>
+			   <transaction_id><![CDATA[1008450740201411110005820873]]></transaction_id>
+			   <out_trade_no><![CDATA[1415757673]]></out_trade_no>
+			   <attach><![CDATA[订单额外描述]]></attach>
+			   <time_end><![CDATA[20141111170043]]></time_end>
+			   <trade_state><![CDATA[SUCCESS]]></trade_state>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+
+		$result = $this->wechatPay->queryOrderByTransactionId(1);
+		$this->assertEquals($result['return_code'],'SUCCESS');
+
+		$result = $this->wechatPay->queryOrderByOutTradeNo(1);
+		$this->assertEquals($result['return_code'],'SUCCESS');
+	}
+	/**
+	 * @test
+	 * @expectedException Exception
+	 * @expectedExceptionMessage 此交易订单号不存在
+	 */
+	public function queryOrder_notexist(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+			   <return_code><![CDATA[SUCCESS]]></return_code>
+			   <return_msg><![CDATA[OK]]></return_msg>
+			   <appid><![CDATA[wx2421b1c4370ec43b]]></appid>
+			   <mch_id><![CDATA[10000100]]></mch_id>
+			   <nonce_str><![CDATA[TN55wO9Pba5yENl8]]></nonce_str>
+			   <sign><![CDATA[BDF0099C15FF7BC6B1585FBB110AB635]]></sign>
+			   <result_code><![CDATA[FAIL]]></result_code>
+			   <err_code_des><![CDATA[此交易订单号不存在]]></err_code_des>
+			   <err_code><![CDATA[ORDERNOTEXIST]]></err_code>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$this->wechatPay->queryOrderByTransactionId(1);
+	}
+
+	/** @test */
+	public function closeOrder(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+			   <return_code><![CDATA[SUCCESS]]></return_code>
+			   <return_msg><![CDATA[OK]]></return_msg>
+			   <appid><![CDATA[wx2421b1c4370ec43b]]></appid>
+			   <mch_id><![CDATA[10000100]]></mch_id>
+			   <nonce_str><![CDATA[BFK89FC6rxKCOjLX]]></nonce_str>
+			   <sign><![CDATA[72B321D92A7BFA0B2509F3D13C7B1631]]></sign>
+			   <result_code><![CDATA[SUCCESS]]></result_code>
+			   <result_msg><![CDATA[OK]]></result_msg>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->closeOrder(1);
+		$this->assertEquals($result['result_msg'],'OK');
+	}
+
+	/** @test */
+	public function refund(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+			   <return_code><![CDATA[SUCCESS]]></return_code>
+			   <return_msg><![CDATA[OK]]></return_msg>
+			   <appid><![CDATA[wx2421b1c4370ec43b]]></appid>
+			   <mch_id><![CDATA[10000100]]></mch_id>
+			   <nonce_str><![CDATA[NfsMFbUFpdbEhPXP]]></nonce_str>
+			   <sign><![CDATA[B7274EB9F8925EB93100DD2085FA56C0]]></sign>
+			   <result_code><![CDATA[SUCCESS]]></result_code>
+			   <transaction_id><![CDATA[1008450740201411110005820873]]></transaction_id>
+			   <out_trade_no><![CDATA[1415757673]]></out_trade_no>
+			   <out_refund_no><![CDATA[1415701182]]></out_refund_no>
+			   <refund_id><![CDATA[2008450740201411110000174436]]></refund_id>
+			   <refund_channel><![CDATA[]]></refund_channel>
+			   <refund_fee>1</refund_fee> 
+			</xml>
+			");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->refundByOutTradeNo(1,1,1,1);
+		$this->assertEquals($result['refund_fee'],1);
+		$result = $this->wechatPay->refundByTransactionId(1,1,1,1);
+		$this->assertEquals($result['refund_fee'],1);
+	}
+
+	/** @test */
+	public function queryRefund(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+			   <appid><![CDATA[wx2421b1c4370ec43b]]></appid>
+			   <mch_id><![CDATA[10000100]]></mch_id>
+			   <nonce_str><![CDATA[TeqClE3i0mvn3DrK]]></nonce_str>
+			   <out_refund_no_0><![CDATA[1415701182]]></out_refund_no_0>
+			   <out_trade_no><![CDATA[1415757673]]></out_trade_no>
+			   <refund_count>1</refund_count>
+			   <refund_fee_0>1</refund_fee_0>
+			   <refund_id_0><![CDATA[2008450740201411110000174436]]></refund_id_0>
+			   <refund_status_0><![CDATA[PROCESSING]]></refund_status_0>
+			   <result_code><![CDATA[SUCCESS]]></result_code>
+			   <return_code><![CDATA[SUCCESS]]></return_code>
+			   <return_msg><![CDATA[OK]]></return_msg>
+			   <sign><![CDATA[1F2841558E233C33ABA71A961D27561C]]></sign>
+			   <transaction_id><![CDATA[1008450740201411110005820873]]></transaction_id>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+
+		$result = $this->wechatPay->queryRefundByOutRefundNo(1);
+		$this->assertEquals($result['return_code'],'SUCCESS');
+		$result = $this->wechatPay->queryRefundByOutTradeNo(1);
+		$this->assertEquals($result['return_code'],'SUCCESS');
+		$result = $this->wechatPay->queryRefundByRefundId(1);
+		$this->assertEquals($result['return_code'],'SUCCESS');
+		$result = $this->wechatPay->queryRefundByTransactionId(1);
+		$this->assertEquals($result['return_code'],'SUCCESS');
+	}
+
+	/** @test */
+	public function reverse(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+			   <return_code><![CDATA[SUCCESS]]></return_code>
+			   <return_msg><![CDATA[OK]]></return_msg>
+			   <appid><![CDATA[wx2421b1c4370ec43b]]></appid>
+			   <mch_id><![CDATA[10000100]]></mch_id>
+			   <nonce_str><![CDATA[o5bAKF3o2ypC8hwa]]></nonce_str>
+			   <sign><![CDATA[6F5080EDDD196FFCDE53F786BBB93899]]></sign>
+			   <result_code><![CDATA[SUCCESS]]></result_code>
+			   <recall><![CDATA[N]]></recall>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+
+		$result = $this->wechatPay->reverseByOutTradeNo(1);
+		$this->assertEquals($result['return_code'],'SUCCESS');
+		$result = $this->wechatPay->reverseByTransactionId(1);
+		$this->assertEquals($result['return_code'],'SUCCESS');
+	}
+
+	/** @test */
+	public function downloadBill(){
+		$mock = "交易时间,公众账号ID,商户号,子商户号,设备号,微信订单号,商户订单号,用户标识,交易类型,交易状态,付款银行,货币种类,总金额,代金券或立减优惠金额,微信退款单号,商户退款单号,退款金额,代金券或立减优惠退款金额,退款类型,退款状态,商品名称,商户数据包,手续费,费率
+			`2014-11-1016：33：45,`wx2421b1c4370ec43b,`10000100,`0,`1000,`1001690740201411100005734289,`1415640626,`085e9858e3ba5186aafcbaed1,`MICROPAY,`SUCCESS,`CFT,`CNY,`0.01,`0.0,`0,`0,`0,`0,`,`,`被扫支付测试,`订单额外描述,`0,`0.60%
+			`2014-11-1016：46：14,`wx2421b1c4370ec43b,`10000100,`0,`1000,`1002780740201411100005729794,`1415635270,`085e9858e90ca40c0b5aee463,`MICROPAY,`SUCCESS,`CFT,`CNY,`0.01,`0.0,`0,`0,`0,`0,`,`,`被扫支付测试,`订单额外描述,`0,`0.60%
+			 总交易单数,总交易额,总退款金额,总代金券或立减优惠退款金额,手续费总金额
+			`2,`0.02,`0.0,`0.0,`0";
+		$this->httpClient->method('post')->willReturn($mock);
+		$this->wechatPay->setHttpClient($this->httpClient);
+
+		$result = $this->wechatPay->downloadBill(1);
+		$this->assertEquals($mock,$result);
+	}
+
+	/** @test */
+	public function downloadFundFlow(){
+		$mock = "记账时间,微信支付业务单号,资金流水单号,业务名称,业务类型,收支类型,收支金额（元）,账户结余（元）,资金变更提交申请人,备注,业务凭证号
+				`2018-02-01 04:21:23,`50000305742018020103387128253,`1900009231201802015884652186,`退款,`退款,`支出,`0.02,`0.17,`system,`缺货,`REF4200000068201801293084726067
+				资金流水总笔数,收入笔数,收入金额,支出笔数,支出金额
+				`20.0,`17.0,`0.35,`3.0,`0.18";
+		$this->httpClient->method('post')->willReturn($mock);
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->downloadFundFlow(1);
+		$this->assertEquals($mock,$result);
+	}
+
+	/** @test */
+	public function sendRedPack(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[SUCCESS]]></return_code>
+				<return_msg><![CDATA[发放成功.]]></return_msg>
+				<result_code><![CDATA[SUCCESS]]></result_code>
+				<err_code><![CDATA[0]]></err_code>
+				<err_code_des><![CDATA[发放成功.]]></err_code_des>
+				<mch_billno><![CDATA[0010010404201411170000046545]]></mch_billno>
+				<mch_id>10010404</mch_id>
+				<wxappid><![CDATA[wx6fa7e3bab7e15415]]></wxappid>
+				<re_openid><![CDATA[onqOjjmM1tad-3ROpncN-yUfa6uI]]></re_openid>
+				<total_amount>1</total_amount>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->sendRedPack(1,'','',1,1,'','actname','remark');
+		$this->assertEquals($result['total_amount'],'1');
+	}
+
+	/**
+	 * @test
+	 * @expectedException Exception
+	 * @expectedExceptionMessage 系统繁忙,请稍后再试.
+	 */
+	public function sendRedPack_fail(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[FAIL]]></return_code>
+				<return_msg><![CDATA[系统繁忙,请稍后再试.]]></return_msg>
+				<result_code><![CDATA[FAIL]]></result_code>
+				<err_code><![CDATA[268458547]]></err_code>
+				<err_code_des><![CDATA[系统繁忙,请稍后再试.]]></err_code_des>
+				<mch_billno><![CDATA[0010010404201411170000046542]]></mch_billno>
+				<mch_id>10010404</mch_id>
+				<wxappid><![CDATA[wx6fa7e3bab7e15415]]></wxappid>
+				<re_openid><![CDATA[onqOjjmM1tad-3ROpncN-yUfa6uI]]></re_openid>
+				<total_amount>1</total_amount>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->sendRedPack(1,'','',1,1,'','actname','remark');
+	}
+
+	/** @test */
+	public function sendGroupRedPack(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[SUCCESS]]></return_code>
+				<return_msg><![CDATA[发放成功.]]></return_msg>
+				<result_code><![CDATA[SUCCESS]]></result_code>
+				<err_code><![CDATA[0]]></err_code>
+				<err_code_des><![CDATA[发放成功.]]></err_code_des>
+				<mch_billno><![CDATA[0010010404201411170000046545]]></mch_billno>
+				<mch_id>10010404</mch_id>
+				<wxappid><![CDATA[wx6fa7e3bab7e15415]]></wxappid>
+				<re_openid><![CDATA[onqOjjmM1tad-3ROpncN-yUfa6uI]]></re_openid>
+				<total_amount>3</total_amount>
+				<send_time><![CDATA[20150227091010]]></send_time>
+				<send_listid><![CDATA[1000000000201502270093647546]]></send_listid>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->sendGroupRedPack(1,'','',1,1,'','actname','remark');
+		$this->assertEquals(3,$result['total_amount']);
+	}
+
+	/**
+	 * @test
+	 * @expectedException Exception
+	 * @expectedExceptionMessage 系统繁忙,请稍后再试.
+	 */
+	public function sendGroupRedPack_fail(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[FAIL]]></return_code>
+				<return_msg><![CDATA[系统繁忙,请稍后再试.]]></return_msg>
+				<result_code><![CDATA[FAIL]]></result_code>
+				<err_code><![CDATA[268458547]]></err_code>
+				<err_code_des><![CDATA[系统繁忙,请稍后再试.]]></err_code_des>
+				<mch_billno><![CDATA[0010010404201411170000046542]]></mch_billno>
+				<mch_id>10010404</mch_id>
+				<wxappid><![CDATA[wx6fa7e3bab7e15415]]></wxappid>
+				<re_openid><![CDATA[onqOjjmM1tad-3ROpncN-yUfa6uI]]></re_openid>
+				<total_amount>3</total_amount>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->sendGroupRedPack(1,'','',1,1,'','actname','remark');
+	}
+
+	/** @test */
+	public function getHbInfo(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[SUCCESS]]></return_code>
+				<return_msg><![CDATA[OK]]></return_msg>
+				<result_code><![CDATA[SUCCESS]]></result_code>
+				<err_code><![CDATA[SUCCESS]]></err_code>
+				<err_code_des><![CDATA[OK]]></err_code_des>
+				<mch_billno><![CDATA[9010080799701411170000046603]]></mch_billno>
+				<mch_id><![CDATA[11475856]]></mch_id>
+				<detail_id><![CDATA[10000417012016080830956240040]]></detail_id>
+				<status><![CDATA[RECEIVED]]></status>
+				<send_type><![CDATA[ACTIVITY]]></send_type>
+				<hb_type><![CDATA[NORMAL]]></hb_type>
+				<total_num>1</total_num>
+				<total_amount>100</total_amount>
+				<send_time><![CDATA[2016-08-08 21:49:22]]></send_time>
+				<hblist>
+					<hbinfo>
+					<openid><![CDATA[oHkLxtzmyHXX6FW_cAWo_orTSRXs]]></openid>
+					<amount>100</amount>
+					<rcv_time><![CDATA[2016-08-08 21:49:46]]></rcv_time>
+					</hbinfo>
+				</hblist>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->getHbInfo(1);
+		$this->assertEquals(100,$result['total_amount']);
+	}
+
+	/**
+	 * @test
+	 * @expectedException Exception
+	 * @expectedExceptionMessage 指定单号数据不存在
+	 */
+	public function getHbInfo_fail(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[FAIL]]></return_code>
+				<return_msg><![CDATA[指定单号数据不存在]]></return_msg>
+				<result_code><![CDATA[FAIL]]></result_code>
+				<err_code><![CDATA[SYSTEMERROR]]></err_code>
+				<err_code_des><![CDATA[指定单号数据不存在]]></err_code_des>
+				<mch_id>666</mch_id>
+				<mch_billno><![CDATA[1000005901201407261446939688]]></mch_billno>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->getHbInfo(1);
+	}
+
+	/** @test */
+	public function microPay(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+			   <return_code><![CDATA[SUCCESS]]></return_code>
+			   <return_msg><![CDATA[OK]]></return_msg>
+			   <appid><![CDATA[wx2421b1c4370ec43b]]></appid>
+			   <mch_id><![CDATA[10000100]]></mch_id>
+			   <device_info><![CDATA[1000]]></device_info>
+			   <nonce_str><![CDATA[GOp3TRyMXzbMlkun]]></nonce_str>
+			   <sign><![CDATA[D6C76CB785F07992CDE05494BB7DF7FD]]></sign>
+			   <result_code><![CDATA[SUCCESS]]></result_code>
+			   <openid><![CDATA[oUpF8uN95-Ptaags6E_roPHg7AG0]]></openid>
+			   <is_subscribe><![CDATA[Y]]></is_subscribe>
+			   <trade_type><![CDATA[MICROPAY]]></trade_type>
+			   <bank_type><![CDATA[CCB_DEBIT]]></bank_type>
+			   <total_fee>1</total_fee>
+			   <coupon_fee>0</coupon_fee>
+			   <fee_type><![CDATA[CNY]]></fee_type>
+			   <transaction_id><![CDATA[1008450740201411110005820873]]></transaction_id>
+			   <out_trade_no><![CDATA[1415757673]]></out_trade_no>
+			   <attach><![CDATA[订单额外描述]]></attach>
+			   <time_end><![CDATA[20141111170043]]></time_end>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->microPay(1,'','',1,1,'');
+		$this->assertEquals(1,$result['total_fee']);
+	}
+
+	/** @test */
+	public function transferWallet(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[SUCCESS]]></return_code>
+				<return_msg><![CDATA[]]></return_msg>
+				<mch_appid><![CDATA[wxec38b8ff840bd989]]></mch_appid>
+				<mchid><![CDATA[10013274]]></mchid>
+				<device_info><![CDATA[]]></device_info>
+				<nonce_str><![CDATA[lxuDzMnRjpcXzxLx0q]]></nonce_str>
+				<result_code><![CDATA[SUCCESS]]></result_code>
+				<partner_trade_no><![CDATA[10013574201505191526582441]]></partner_trade_no>
+				<payment_no><![CDATA[1000018301201505190181489473]]></payment_no>
+				<payment_time><![CDATA[2015-05-19 15：26：59]]></payment_time>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->transferWallet(1,'','',1,1,'zw');
+		$this->assertEquals('SUCCESS',$result['return_code']);
+	}
+	/**
+	 * @test
+	 * @expectedException Exception
+	 * @expectedExceptionMessage 系统繁忙,请稍后再试.
+	 */
+	public function transferWallet_fail(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[FAIL]]></return_code>
+				<return_msg><![CDATA[系统繁忙,请稍后再试.]]></return_msg>
+				<result_code><![CDATA[FAIL]]></result_code>
+				<err_code><![CDATA[SYSTEMERROR]]></err_code>
+				<err_code_des><![CDATA[系统繁忙,请稍后再试.]]></err_code_des>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->transferWallet(1,'','',1,1,'zw');
+	}
+
+	/** @test */
+	public function queryTransferWallet(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[SUCCESS]]></return_code>
+				<return_msg><![CDATA[获取成功]]></return_msg>
+				<result_code><![CDATA[SUCCESS]]></result_code>
+				<mch_id>10000098</mch_id>
+				<appid><![CDATA[wxe062425f740c30d8]]></appid>
+				<detail_id><![CDATA[1000000000201503283103439304]]></detail_id>
+				<partner_trade_no><![CDATA[1000005901201407261446939628]]></partner_trade_no>
+				<status><![CDATA[SUCCESS]]></status>
+				<payment_amount>650</payment_amount >
+				<openid ><![CDATA[oxTWIuGaIt6gTKsQRLau2M0yL16E]]></openid>
+				<transfer_time><![CDATA[2015-04-21 20:00:00]]></transfer_time>
+				<transfer_name ><![CDATA[测试]]></transfer_name >
+				<desc><![CDATA[福利测试]]></desc>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->queryTransferWallet(1);
+		$this->assertEquals('SUCCESS',$result['return_code']);
+	}
+
+	/** @test */
+	public function transferBankCard(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[SUCCESS]]></return_code>
+				<return_msg><![CDATA[支付成功]]></return_msg>
+				<result_code><![CDATA[SUCCESS]]></result_code>
+				<err_code><![CDATA[SUCCESS]]></err_code>
+				<err_code_des><![CDATA[微信侧受理成功]]></err_code_des>
+				<nonce_str><![CDATA[50780e0cca98c8c8e814883e5caa672e]]></nonce_str>
+				<mch_id><![CDATA[2302758702]]></mch_id>
+				<partner_trade_no><![CDATA[1212121221278]]></partner_trade_no>
+				<amount>500</amount>
+				<payment_no><![CDATA[10000600500852017030900000020006012]]></payment_no>
+				<cmms_amt>0</cmms_amt>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->transferBankCard(1,'','','1001',1,'zw');
+		$this->assertEquals('SUCCESS',$result['return_code']);
+	}
+	/**
+	 * @test
+	 * @expectedException Exception
+	 * @expectedExceptionMessage 系统繁忙,请稍后再试.
+	 */
+	public function transferBankCard_fail(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[FAIL]]></return_code>
+				<return_msg><![CDATA[系统繁忙,请稍后再试.]]></return_msg>
+				<result_code><![CDATA[FAIL]]></result_code>
+				<err_code><![CDATA[SYSTEMERROR]]></err_code>
+				<err_code_des><![CDATA[系统繁忙,请稍后再试.]]></err_code_des>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->transferBankCard(1,'','','1001',1,'zw');
+	}
+
+	/** @test */
+	public function queryTransferBankCard(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code><![CDATA[SUCCESS]]></return_code>
+				<return_msg><![CDATA[ok]]></return_msg>
+				<result_code><![CDATA[SUCCESS]]></result_code>
+				<err_code><![CDATA[SUCCESS]]></err_code>
+				<err_code_des><![CDATA[ok]]></err_code_des>
+				<mch_id><![CDATA[2302758702]]></mch_id>
+				<partner_trade_no><![CDATA[1212121221278]]></partner_trade_no>
+				<payment_no><![CDATA[10000600500852017030900000020006012]]></payment_no>
+				<bank_no_md5><![CDATA[2260AB5EF3D290E28EFD3F74FF7A29A0]]></bank_no_md5>
+				<true_name_md5><![CDATA[7F25B325D37790764ABA55DAD8D09B76]]></true_name_md5>
+				<amount>500</amount>
+				<status><![CDATA[处理中]]></status>
+				<cmms_amt>0</cmms_amt>
+				<create_time><![CDATA[2017-03-09 15:04:04]]></create_time>
+				<reason><![CDATA[]]></reason>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->queryTransferBankCard(1);
+		$this->assertEquals('SUCCESS',$result['return_code']);
+	}
+
+	/** @test */
+	public function sendCoupon(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code>SUCCESS</return_code>
+				<appid>wx5edab3bdfba3dc1c</appid>
+				<mch_id>10000098</mch_id>
+				<nonce_str>1417579335</nonce_str>
+				<sign>841B3002FE2220C87A2D08ABD8A8F791</sign>
+				<result_code>SUCCESS</result_code>
+				<coupon_stock_id>1717</coupon_stock_id>
+				<resp_count>1</resp_count>
+				<success_count>1</success_count>
+				<failed_count>0</failed_count>
+				<openid>onqOjjrXT-776SpHnfexGm1_P7iE</openid>
+				<ret_code>SUCCESS</ret_code>
+				<coupon_id>6954</coupon_id>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->sendCoupon(1,1,1);
+		$this->assertEquals('SUCCESS',$result['return_code']);
+	}
+
+	/**
+	 * @test
+	 * @expectedException Exception
+	 * @expectedExceptionMessage 你已领取过该代金券
+	 */
+	public function sendCoupon_fail(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code>SUCCESS</return_code>
+				<appid>wx5edab3bdfba3dc1c</appid>
+				<mch_id>10000098</mch_id>
+				<nonce_str>1417579335</nonce_str>
+				<sign>841B3002FE2220C87A2D08ABD8A8F791</sign>
+				<result_code>FAIL</result_code>
+				<err_code>268456007</err_code>
+				<err_code_des>你已领取过该代金券</err_code_des>
+				<coupon_stock_id>1717</coupon_stock_id>
+				<resp_count>1</resp_count>
+				<success_count>0</success_count>
+				<failed_count>1</failed_count>
+				<openid>onqOjjrXT-776SpHnfexGm1_P7iE</openid>
+				<ret_code>FAIL</ret_code>
+				<ret_msg>你已领取过该代金券</ret_msg>
+				<coupon_id></coupon_id>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->sendCoupon(1,1,1);
+		$this->assertEquals('FAIL',$result['result_code']);
+	}
 	/**
 	 * 系统错误
+	 * @test
 	 * @expectedException Exception
 	 * @expectedExceptionMessage 签名失败
 	 */
-	public function testSysErr(){
+	public function systemErr(){
 		$this->httpClient->method('post')->willReturn(
 			"<xml><return_code>FAIL</return_code><return_msg>签名失败</return_msg></xml>");
 		$this->wechatPay->setHttpClient($this->httpClient);
@@ -59,10 +603,11 @@ class WechatPayMockTest extends TestCase{
 
 	/**
 	 * 应用错误
+	 * @test
 	 * @expectedException Exception
 	 * @expectedExceptionMessage 商户无此接口权限
 	 */
-	public function testApplicationErr(){
+	public function applicationErr(){
 		$this->httpClient->method('post')->willReturn(
 			"<xml><return_code>SUCCESS</return_code><return_msg>OK</return_msg><result_code>FAIL</result_code>
 			<err_code>NOAUTH</err_code><err_code_des>商户无此接口权限</err_code_des></xml>");
@@ -70,7 +615,11 @@ class WechatPayMockTest extends TestCase{
 		$this->wechatPay->getPrepayId("", "", 1, 'openid', 'ext');
 	}
 
-	public function testOnPaidNotify(){
+	/**
+	 * 支付结果返回
+	 * @test
+	 */
+	public function onPaidNotify(){
 		$notifydata = ['a'=>'b'];
 		$sign = $this->wechatPay->sign($notifydata);
 		$notifydata['sign'] = $sign;
@@ -81,10 +630,12 @@ class WechatPayMockTest extends TestCase{
 	}
 
 	/**
+	 * 支付结果返回异常
+	 * @test
 	 * @expectedException Exception
 	 * @expectedExceptionMessageRegExp /Invalid paid notify data/
 	 */
-	public function testOnPaidNotifyException(){
+	public function onPaidNotifyException(){
 		$notifydata = ['a'=>'b'];
 		$sign = 'wrong sign';
 		$notifydata['sign'] = $sign;
