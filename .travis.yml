@@ -16,7 +16,7 @@ before_install:
 install: travis_retry composer install
 
 script:
-  - ./vendor/bin/phpunit test/WechatPayMockTest.php --coverage-clover=coverage.xml
+  - ./vendor/bin/phpunit test/AllTests.php --coverage-clover=coverage.xml
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

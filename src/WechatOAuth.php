@@ -6,7 +6,7 @@
 namespace zhangv\wechat;
 
 class WechatOAuth {
-
+	const TICKETTYPE_JSAPI = 'jsapi',TICKETTYPE_WXCARD = 'wx_card';
 	public $responseJSON = null;
 	public $errCode = null;
 	public $errMsg = null;
@@ -67,10 +67,10 @@ class WechatOAuth {
 		return $this->accessToken;
 	}
 
-	public function getTicket(){
+	public function getTicket($type = WechatOAuth::TICKETTYPE_JSAPI){
 		$accessToken = $this->getAccessToken();
 		// $url = "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=$accessToken";
-		$url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?type=jsapi&access_token=$accessToken";
+		$url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?type={$type}&access_token=$accessToken";
 		$this->responseJSON = $this->httpClient->get($url);
 		return $this->responseJSON;
 	}

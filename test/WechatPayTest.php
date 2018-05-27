@@ -191,11 +191,6 @@ class WechatPayTest extends TestCase{
 		$this->assertNotNull($result);
 	}
 
-	public function testRSAEncrypt(){
-		$result = $this->wechatPay->rsaEncrypt('a');
-		$this->assertNotEmpty($result);
-	}
-
 	public function testGetSignKey(){
 		$result = $this->wechatPay->getSignKey();
 		$this->assertNotEmpty($result);

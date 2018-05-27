@@ -81,6 +81,10 @@ class WechatPay {
 		$this->httpClient = new HttpClient(5);
 	}
 
+	public function setWechatOAuth($wechatOAuth){
+		$this->wechatOAuth = $wechatOAuth;
+	}
+
 	public function getWechatOAuth(){
 		if(!$this->wechatOAuth){
 			$this->wechatOAuth = new WechatOAuth($this->config['app_id'],$this->config['app_secret']);
@@ -90,6 +94,10 @@ class WechatPay {
 
 	public function setConfig($config){
 		$this->config = $config;
+	}
+
+	public function getConfig(){
+		return $this->config;
 	}
 
 	public function setHttpClient($httpClient){
@@ -532,6 +540,7 @@ class WechatPay {
 
 	/**
 	 * 拉取订单评价数据
+	 * @ref https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_17&index=11
 	 * @param string $begin_time 开始时间,格式为yyyyMMddHHmmss
 	 * @param string $end_time 结束时间,格式为yyyyMMddHHmmss
 	 * @param int $offset 偏移
@@ -915,7 +924,7 @@ class WechatPay {
 		return $key;
 	}
 
-	private function rsaEncrypt($data){
+	public function rsaEncrypt($data){
 		$pubkey = $this->getPublicKey();
 		$encrypted = null;
 		$pubkey = openssl_get_publickey($pubkey);
@@ -940,13 +949,15 @@ class WechatPay {
 
 	/**
 	 * 获取JSAPI所需要的页面参数
+	 * @param string $url
+	 * @param string $ticket
 	 * @return array
 	 */
-	public function getSignPackage($url){
-		$jsapiTicket = $this->getJSAPITicket();
+	public function getSignPackage($url, $ticket = null){
+		if(!$ticket) $ticket = $this->getTicket();
 		$timestamp = time();
 		$nonceStr = $this->getNonceStr();
-		$rawString = "jsapi_ticket=$jsapiTicket&noncestr=$nonceStr&timestamp=$timestamp&url=$url";
+		$rawString = "jsapi_ticket=$ticket&noncestr=$nonceStr&timestamp=$timestamp&url=$url";
 		$signature = sha1($rawString);
 
 		$signPackage = array(
@@ -962,20 +973,29 @@ class WechatPay {
 
 	/**
 	 * 获取JSAPI Ticket
+	 * @param boolean $cache
 	 * @return string
 	 */
-	public function getJSAPITicket(){
+	public function getTicket($cache = true){
+		$ticket = null;
 		if(isset($this->config['jsapi_ticket']) && file_exists($this->config['jsapi_ticket'])){
 			$data = json_decode(file_get_contents($this->config['jsapi_ticket']));
-			if (!$data || $data->expire_time < time()) {
-				$data = $this->getWechatOAuth()->getTicket();
-				$fp = fopen($this->config["jsapi_ticket"], "w");
-				fwrite($fp, $data);
-				if ($fp) fclose($fp);
-				$data = json_decode($data);
+			if ($data && $data->expires_at < time()) {
+				$ticket = $data->ticket;
 			}
-			return $data->jsapi_ticket;
 		}
+		if(!$ticket){
+			$data = $this->getWechatOAuth()->getTicket();
+			$data = json_decode($data);
+			$data->expires_at = time() + $data->expires_in;
+			if($cache === true){
+				$fp = fopen($this->config["jsapi_ticket"], "w");
+				fwrite($fp, json_encode($data));
+				if ($fp) fclose($fp);
+			}
+			$ticket = $data->ticket;
+		}
+		return $ticket;
 	}
 
 	private function post($url, $data,$cert = true) {
@@ -1000,7 +1020,7 @@ class WechatPay {
 			$opts[CURLOPT_SSLKEY] = $this->config['ssl_key_path'];
 		}
 		$processResponse = true;
-		if(in_array($url,[self::URL_DOWNLOADBILL,self::URL_DOWNLOAD_FUND_FLOW])){
+		if(in_array($url,[self::URL_DOWNLOADBILL,self::URL_DOWNLOAD_FUND_FLOW,self::URL_BATCHQUERYCOMMENT])){
 			$processResponse = false;
 		}
 		if($this->sandbox === true){

@@ -3,12 +3,15 @@ require_once __DIR__ . "/../demo/autoload.php";
 use PHPUnit\Framework\TestCase;
 use zhangv\wechat\WechatPay;
 use zhangv\wechat\HttpClient;
+use zhangv\wechat\WechatOAuth;
 
 class WechatPayMockTest extends TestCase{
 	/** @var WechatPay */
 	private $wechatPay;
 	/** @var HttpClient */
 	private $httpClient;
+	/** @var WechatOAuth */
+	private $wechatOauth;
 
 	public function setUp(){
 		$config = [
@@ -24,10 +27,12 @@ class WechatPayMockTest extends TestCase{
 			'h5_scene_info' => [//required in H5
 				'h5_info' => ['type' => 'Wap', 'wap_url' => 'http://wapurl', 'wap_name' => 'wapname']
 			],
-			'rsa_pubkey_path' => __DIR__ .'/pubkey.pem'
+			'rsa_pubkey_path' => __DIR__ .'/pubkey.pem',
+			'jsapi_ticket' => __DIR__ .'/jsticket.json'
 		];
 		$this->wechatPay = new WechatPay($config);
 		$this->httpClient = $this->createMock(HttpClient::class);
+		$this->wechatOauth = $this->createMock(WechatOAuth::class);
 	}
 
 	/** @test */
@@ -588,6 +593,201 @@ class WechatPayMockTest extends TestCase{
 		$result = $this->wechatPay->sendCoupon(1,1,1);
 		$this->assertEquals('FAIL',$result['result_code']);
 	}
+
+	/** @test */
+	public function queryCouponStock(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				 <return_code>SUCCESS</return_code>
+				  <appid>wx5edab3bdfba3dc1c</appid>
+				  <mch_id>10000098</mch_id>
+				  <nonce_str>1417583379</nonce_str>
+				  <sign>841B3002FE2220C87A2D08ABD8A8F791</sign>
+				  <result_code>SUCCESS</result_code>
+				  <coupon_stock_id>1717</coupon_stock_id>
+				  <coupon_value>5</coupon_value>
+				  <coupon_mininumn>10</coupon_mininumn>
+				  <coupon_stock_status>4</coupon_stock_status>
+				  <coupon_total>100</coupon_total>
+				  <coupon_budget>500</coupon_budget>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->queryCouponStock(1,1);
+		$this->assertEquals('SUCCESS',$result['return_code']);
+	}
+	/** @test */
+	public function queryCouponsInfo(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code>SUCCESS</return_code>
+				  <appid>wx5edab3bdfba3dc1c</appid>
+				  <mch_id>10000098</mch_id>
+				  <nonce_str>1417586982</nonce_str>
+				  <sign>841B3002FE2220C87A2D08ABD8A8F791</sign>
+				  <result_code>SUCCESS</result_code>
+				  <coupon_stock_id>1717</coupon_stock_id> 
+				  <coupon_id>1442</coupon_id>
+				  <coupon_value>5</coupon_value>
+				  <coupon_mininum>10</coupon_mininum>
+				  <coupon_name>测试代金券</coupon_name>
+				  <coupon_state>SENDED</coupon_state> 
+				  <coupon_desc>微信支付-代金券</coupon_desc>
+				  <coupon_use_value>0</coupon_use_value>
+				  <coupon_remain_value>5</coupon_remain_value>
+				  <send_source>FULL_SEND</send_source>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->queryCouponsInfo(1,1,1);
+		$this->assertEquals('SUCCESS',$result['return_code']);
+	}
+	/** @test */
+	public function getPublicKey(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml>
+				<return_code>SUCCESS</return_code>
+				<return_msg>OK</return_msg>
+				<result_code>SUCCESS</result_code>
+				<mch_id>123456</mch_id>
+				<pub_key><![CDATA[-----BEGIN RSA PUBLIC KEY-----
+MIIBCgKCAQEArT82k67xybiJS9AD8nNAeuDYdrtCRaxkS6cgs8L9h83eqlDTlrdw
+zBVSv5V4imTq/URbXn4K0V/KJ1TwDrqOI8hamGB0fvU13WW1NcJuv41RnJVua0QA
+lS3tS1JzOZpMS9BEGeFvyFF/epbi/m9+2kUWG94FccArNnBtBqqvFncXgQsm98JB
+3a62NbS1ePP/hMI7Kkz+JNMyYsWkrOUFDCXAbSZkWBJekY4nGZtK1erqGRve8Jbx
+TWirAm/s08rUrjOuZFA21/EI2nea3DidJMTVnXVPY2qcAjF+595shwUKyTjKB8v1
+REPB3hPF1Z75O6LwuLfyPiCrCTmVoyfqjwIDAQAB
+-----END RSA PUBLIC KEY-----
+]]></pub_key>
+			</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->getPublicKey(true);
+		$this->assertEquals('-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArT82k67xybiJS9AD8nNA
+euDYdrtCRaxkS6cgs8L9h83eqlDTlrdwzBVSv5V4imTq/URbXn4K0V/KJ1TwDrqO
+I8hamGB0fvU13WW1NcJuv41RnJVua0QAlS3tS1JzOZpMS9BEGeFvyFF/epbi/m9+
+2kUWG94FccArNnBtBqqvFncXgQsm98JB3a62NbS1ePP/hMI7Kkz+JNMyYsWkrOUF
+DCXAbSZkWBJekY4nGZtK1erqGRve8JbxTWirAm/s08rUrjOuZFA21/EI2nea3Did
+JMTVnXVPY2qcAjF+595shwUKyTjKB8v1REPB3hPF1Z75O6LwuLfyPiCrCTmVoyfq
+jwIDAQAB
+-----END PUBLIC KEY-----',$result);
+		$result = $this->wechatPay->getPublicKey();
+		$this->assertEquals('-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArT82k67xybiJS9AD8nNA
+euDYdrtCRaxkS6cgs8L9h83eqlDTlrdwzBVSv5V4imTq/URbXn4K0V/KJ1TwDrqO
+I8hamGB0fvU13WW1NcJuv41RnJVua0QAlS3tS1JzOZpMS9BEGeFvyFF/epbi/m9+
+2kUWG94FccArNnBtBqqvFncXgQsm98JB3a62NbS1ePP/hMI7Kkz+JNMyYsWkrOUF
+DCXAbSZkWBJekY4nGZtK1erqGRve8JbxTWirAm/s08rUrjOuZFA21/EI2nea3Did
+JMTVnXVPY2qcAjF+595shwUKyTjKB8v1REPB3hPF1Z75O6LwuLfyPiCrCTmVoyfq
+jwIDAQAB
+-----END PUBLIC KEY-----',$result);
+		unlink($this->wechatPay->getConfig()['rsa_pubkey_path']);
+	}
+	/** @test */
+	public function sign(){
+		$data = [
+			'appid' =>	'wxd930ea5d5a258f4f',
+			'mch_id'=>	'10000100',
+			'device_info'=>	'1000',
+			'body'=> 'test',
+			'nonce_str'=>'ibuaiVcKdpRxkhJA'];
+		$this->wechatPay->setConfig(['api_key'=>'192006250b4c09247ec02edce69f6a2d']);
+		$md5 = $this->wechatPay->sign($data,WechatPay::SIGNTYPE_MD5);
+		$this->assertEquals('9A0A8659F005D6984697E2CA0A9CF3B7',$md5);
+		$sha256 = $this->wechatPay->sign($data,WechatPay::SIGNTYPE_HMACSHA256);
+		$this->assertEquals('6A9AE1657590FD6257D693A078E1C3E4BB6BA4DC30B23E0EE2496E54170DACD6',$sha256);
+	}
+
+	/** @test */
+	public function getTicket(){
+		$this->wechatOauth->method('getTicket')->willReturn(
+			'{
+			"errcode":0,
+			"errmsg":"ok",
+			"ticket":"bxLdikRXVbTPdHSM05e5u5sUoXNKdvsdshFKA",
+			"expires_in":7200
+			}');
+		$this->wechatPay->setWechatOAuth($this->wechatOauth);
+		$t = $this->wechatPay->getTicket(true);
+		$this->assertEquals('bxLdikRXVbTPdHSM05e5u5sUoXNKdvsdshFKA',$t);
+		$t = $this->wechatPay->getTicket();
+		$this->assertEquals('bxLdikRXVbTPdHSM05e5u5sUoXNKdvsdshFKA',$t);
+		unlink($this->wechatPay->getConfig()['jsapi_ticket']);
+	}
+
+	/** @test */
+	public function batchQueryComment(){
+		$comments = "100
+`2017-07-01 10:00:05,` 1001690740201411100005734289,`5,`赞，水果很新鲜 
+`2017-07-01 11:00:05,` 1001690740201411100005734278,`5,`不错，支付渠道很方便 
+`2017-07-01 11:30:05,` 1001690740201411100005734250,`4,`东西还算符合预期";
+		$this->httpClient->method('post')->willReturn($comments);
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->batchQueryComment(1,1);
+		$this->assertEquals($comments,$result);
+	}
+
+	/** @test */
+	public function getPackage(){
+		$r = $this->wechatPay->getPackage('1',WechatPay::TRADETYPE_JSAPI);
+		$this->assertEquals("prepay_id=1",$r['package']);
+		$r = $this->wechatPay->getPackage('1',WechatPay::TRADETYPE_APP);
+		$this->assertEquals("Sign=WXPay",$r['package']);
+		$this->assertEquals($this->wechatPay->getConfig()['app_id'],$r['appid']);
+	}
+
+	/** @test */
+	public function getPrepayIdAPP(){
+		$this->httpClient->method('post')->willReturn("<xml>
+		   <return_code><![CDATA[SUCCESS]]></return_code>
+		   <return_msg><![CDATA[OK]]></return_msg>
+		   <appid><![CDATA[wx2421b1c4370ec43b]]></appid>
+		   <mch_id><![CDATA[10000100]]></mch_id>
+		   <nonce_str><![CDATA[IITRi8Iabbblz1Jc]]></nonce_str>
+		   <sign><![CDATA[7921E432F65EB8ED0CE9755F0E86D72F]]></sign>
+		   <result_code><![CDATA[SUCCESS]]></result_code>
+		   <prepay_id><![CDATA[wx201411101639507cbf6ffd8b0779950874]]></prepay_id>
+		   <trade_type><![CDATA[APP]]></trade_type>
+		</xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$result = $this->wechatPay->getPrepayIdAPP(1,1,1,1);
+		$this->assertEquals('wx201411101639507cbf6ffd8b0779950874',$result);
+	}
+
+	/** @test */
+	public function getSignPackage(){
+		$sp = $this->wechatPay->getSignPackage('url','ticket');
+		$this->assertEquals($sp['appId'],$this->wechatPay->getConfig()['app_id']);
+	}
+
+	/** @test */
+	public function getSignKey(){
+
+	}
+
+	/** @test */
+	public function authCodeToOpenId(){
+
+	}
+
+	/** @test */
+	public function shortUrl(){
+
+	}
+
+	/** @test */
+	public function report(){
+
+	}
+
+	/** @test */
+	public function responseNotify(){
+
+	}
+
+	/** @test */
+	public function onRefundedNotify(){
+
+	}
+
 	/**
 	 * 系统错误
 	 * @test
@@ -643,4 +843,13 @@ class WechatPayMockTest extends TestCase{
 			return $data;
 		});
 	}
+
+	/**
+	 * @test
+	 */
+	public function rsaEncrypt(){
+		$result = $this->wechatPay->rsaEncrypt('a');
+		$this->assertNotEmpty($result);
+	}
+
 }
