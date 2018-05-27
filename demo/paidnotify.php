@@ -10,6 +10,6 @@ $payment = new WechatPay($cfg);
 $payment->onPaidNotify($xml,function($notifydata) use ($payment){
 	//do stuff
 	print_r($notifydata);
-	$payment->responseNotify('SUCCESS','OK');
+	$payment->responseNotify();
 });
 

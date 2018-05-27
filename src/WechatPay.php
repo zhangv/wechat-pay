@@ -72,6 +72,8 @@ class WechatPay {
 	private $httpClient = null;
 	/** @var WechatOAuth */
 	private $wechatOAuth = null;
+	/** @var string */
+	public $publicKey = null;
 
 	/**
 	 * @param $config array 配置
@@ -623,8 +625,6 @@ class WechatPay {
 		if($this->validateSign($notify_data)){
 			if($callback && is_callable($callback)){
 				return call_user_func_array( $callback , [$notify_data] );
-			}else{
-				$this->responseNotify();
 			}
 		}else{
 			throw new Exception('Invalid paid notify data');
@@ -644,9 +644,7 @@ class WechatPay {
 		}
 		if($this->validateSign($notify_data)){
 			if($callback && is_callable($callback)){
-				return call_user_func_array( $callback , $notify_data );
-			}else{
-				$this->responseNotify();
+				return call_user_func_array( $callback ,[$notify_data] );
 			}
 		}else{
 			throw new Exception('Invalid refunded notify data');
@@ -669,17 +667,20 @@ class WechatPay {
 
 	/**
 	 * 响应微信支付后台通知
-	 * @param $return_code string 返回状态码 SUCCESS/FAIL
-	 * @param $return_msg string 返回信息
+	 * @param array $data
+	 * @param string $return_code 返回状态码 SUCCESS/FAIL
+	 * @param string $return_msg  返回信息
+	 * @param bool $print
+	 * @return string
 	 */
-	public function responseNotify($return_code="SUCCESS", $return_msg= 'OK') {
-		$data = array();
+	public function responseNotify($print = true,$data = [],$return_code="SUCCESS", $return_msg= 'OK') {
 		$data["return_code"] = $return_code;
 		if ($return_msg) {
 			$data["return_msg"] = $return_msg;
 		}
 		$xml = $this->array2xml($data);
-		print $xml;
+		if($print === true) print $xml;
+		else return $xml;
 	}
 
 	/**
@@ -895,24 +896,29 @@ class WechatPay {
 	 * @throws Exception
 	 */
 	public function getPublicKey($refresh = false){
-		if (!$refresh && file_exists($this->config["rsa_pubkey_path"])) {
-			$pubkey = file_get_contents($this->config["rsa_pubkey_path"]);
-			return $pubkey;
+		if(!$this->publicKey) {
+			if (!$refresh && file_exists($this->config["rsa_pubkey_path"])) {
+				$this->publicKey = file_get_contents($this->config["rsa_pubkey_path"]);
+			}
+			$data = array();
+			$data["mch_id"] = $this->config["mch_id"];
+			$data["sign_type"] = $this->config["sign_type"];
+			$result = $this->post(self::URL_GETPUBLICKEY, $data, true);
+			$pubkey = $result['pub_key'];
+			$this->publicKey = $this->convertPKCS1toPKCS8($pubkey);
+			$fp = fopen($this->config["rsa_pubkey_path"], "w");
+			if ($fp) {
+				fwrite($fp, $this->publicKey);
+				fclose($fp);
+			} else {
+				throw new Exception("RSA public key not found");
+			}
 		}
-		$data = array();
-		$data["mch_id"] = $this->config["mch_id"];
-		$data["sign_type"] = $this->config["sign_type"];
-		$result = $this->post(self::URL_GETPUBLICKEY,$data,true);
-		$pubkey = $result['pub_key'];
-		$pubkey = $this->convertPKCS1toPKCS8($pubkey);
-		$fp = fopen($this->config["rsa_pubkey_path"], "w");
-		if ($fp) {
-			fwrite($fp, $pubkey);
-			fclose($fp);
-			return $pubkey;
-		}else {
-			throw new Exception("RSA public key not found");
-		}
+		return $this->publicKey;
+	}
+
+	public function setPublicKey($publicKey){
+		$this->publicKey = $publicKey;
 	}
 
 	private function convertPKCS1toPKCS8($pkcs1){
@@ -924,8 +930,8 @@ class WechatPay {
 		return $key;
 	}
 
-	public function rsaEncrypt($data){
-		$pubkey = $this->getPublicKey();
+	public function rsaEncrypt($data,$pubkey = null){
+		if(!$pubkey) $pubkey = $this->getPublicKey();
 		$encrypted = null;
 		$pubkey = openssl_get_publickey($pubkey);
 		if (openssl_public_encrypt($data, $encrypted, $pubkey,OPENSSL_PKCS1_OAEP_PADDING))
@@ -986,7 +992,6 @@ class WechatPay {
 		}
 		if(!$ticket){
 			$data = $this->getWechatOAuth()->getTicket();
-			$data = json_decode($data);
 			$data->expires_at = time() + $data->expires_in;
 			if($cache === true){
 				$fp = fopen($this->config["jsapi_ticket"], "w");

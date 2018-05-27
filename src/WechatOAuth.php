@@ -26,10 +26,6 @@ class WechatOAuth {
 		$this->httpClient = $httpClient;
 	}
 
-	public function setAccessToken($accessToken){
-		$this->accessToken = $accessToken;
-	}
-
 	public function authorizeURI($redirectURI,$scope = 'snsapi_userinfo',$state = ''){
 		$redirectURI = urlencode($redirectURI);
 		return "https://open.weixin.qq.com/connect/oauth2/authorize?appid={$this->appId}&redirect_uri={$redirectURI}&response_type=code&scope=$scope&state=$state#wechat_redirect";
@@ -50,13 +46,13 @@ class WechatOAuth {
 	public function refreshToken($refreshToken){
 		$url = "https://api.weixin.qq.com/sns/oauth2/refresh_token?appid={$this->appId}&grant_type=refresh_token&refresh_token=$refreshToken";
 		$this->responseJSON = $this->httpClient->get($url);
-		return $this->responseJSON;
+		return json_decode($this->responseJSON);
 	}
 
 	public function verifyToken($accessToken,$openId){
 		$url = "https://api.weixin.qq.com/sns/auth?access_token=$accessToken&openid=$openId";
 		$this->responseJSON = $this->httpClient->get($url);
-		return $this->responseJSON;
+		return json_decode($this->responseJSON);
 	}
 
 	public function getAccessToken(){
@@ -67,11 +63,11 @@ class WechatOAuth {
 		return $this->accessToken;
 	}
 
-	public function getTicket($type = WechatOAuth::TICKETTYPE_JSAPI){
-		$accessToken = $this->getAccessToken();
+	public function getTicket($type = WechatOAuth::TICKETTYPE_JSAPI, $accessToken = null){
+		if(!$accessToken) $accessToken = $this->getAccessToken();
 		// $url = "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=$accessToken";
 		$url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?type={$type}&access_token=$accessToken";
 		$this->responseJSON = $this->httpClient->get($url);
-		return $this->responseJSON;
+		return json_decode($this->responseJSON);
 	}
 }

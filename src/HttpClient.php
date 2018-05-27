@@ -20,11 +20,7 @@ class HttpClient{
 	public function initInstance($timeout){
 		if(!$this->instance) {
 			$this->instance = curl_init();
-			if ($timeout < 1) {
-				curl_setopt($this->instance, CURLOPT_TIMEOUT_MS, intval($timeout * 1000));
-			} else {
-				curl_setopt($this->instance, CURLOPT_TIMEOUT, intval($timeout));
-			}
+			curl_setopt($this->instance, CURLOPT_TIMEOUT, intval($timeout));
 			curl_setopt($this->instance, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->instance, CURLOPT_FOLLOWLOCATION, true);
 			curl_setopt($this->instance, CURLOPT_SSL_VERIFYPEER, false);
@@ -62,12 +58,6 @@ class HttpClient{
 		$this->errNo = curl_errno($this->instance);
 		$this->info = curl_getinfo($this->instance);
 		return $result;
-	}
-
-	public function setOpt($optArray) {
-		if (!$this->instance)	return;
-		if (!is_array($optArray))	throw new \Exception("Argument is not an array!");
-		curl_setopt_array($this->instance, $optArray);
 	}
 
 	public function getInfo(){

@@ -4,3 +4,4 @@ vendor
 build
 /test/config.php
 cert/*
+cache.properties
