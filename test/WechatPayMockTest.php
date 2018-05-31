@@ -707,8 +707,8 @@ jwIDAQAB
 
 	/** @test */
 	public function getTicket(){
-		$this->wechatOauth->method('getTicket')->willReturn(json_decode(
-			'{
+		$this->wechatOauth->method('getTicket')->willReturn(
+			json_decode('{
 			"errcode":0,
 			"errmsg":"ok",
 			"ticket":"bxLdikRXVbTPdHSM05e5u5sUoXNKdvsdshFKA",
@@ -717,9 +717,9 @@ jwIDAQAB
 		$this->wechatPay->setWechatOAuth($this->wechatOauth);
 		$t = $this->wechatPay->getTicket(true);
 		$this->assertEquals('bxLdikRXVbTPdHSM05e5u5sUoXNKdvsdshFKA',$t);
-		$t = $this->wechatPay->getTicket();
+		$t = $this->wechatPay->getTicket(true);
 		$this->assertEquals('bxLdikRXVbTPdHSM05e5u5sUoXNKdvsdshFKA',$t);
-		unlink($this->wechatPay->getConfig()['jsapi_ticket']);
+		$this->wechatPay->getCacheProvider()->clear('jsapi_ticket');
 	}
 
 	/** @test */

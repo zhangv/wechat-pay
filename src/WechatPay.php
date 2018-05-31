@@ -6,6 +6,8 @@
 namespace zhangv\wechat;
 
 use \Exception;
+use zhangv\wechat\cache\CacheProvider;
+use zhangv\wechat\cache\JsonFileCacheProvider;
 
 class WechatPay {
 	const TRADETYPE_JSAPI = 'JSAPI',TRADETYPE_NATIVE = 'NATIVE',TRADETYPE_APP = 'APP',TRADETYPE_MWEB = 'MWEB';
@@ -74,6 +76,8 @@ class WechatPay {
 	private $wechatOAuth = null;
 	/** @var string */
 	public $publicKey = null;
+	/** @var CacheProvider */
+	public $cacheProvider = null;
 
 	/**
 	 * @param $config array 配置
@@ -81,6 +85,7 @@ class WechatPay {
 	public function __construct(array $config) {
 		$this->config = $config;
 		$this->httpClient = new HttpClient(5);
+		$this->cacheProvider = new JsonFileCacheProvider();
 	}
 
 	public function setWechatOAuth($wechatOAuth){
@@ -104,6 +109,14 @@ class WechatPay {
 
 	public function setHttpClient($httpClient){
 		$this->httpClient = $httpClient;
+	}
+
+	public function setCacheProvider($cacheProvider){
+		$this->cacheProvider = $cacheProvider;
+	}
+
+	public function getCacheProvider(){
+		return $this->cacheProvider;
 	}
 
 	/**
@@ -984,19 +997,17 @@ class WechatPay {
 	 */
 	public function getTicket($cache = true){
 		$ticket = null;
-		if(isset($this->config['jsapi_ticket']) && file_exists($this->config['jsapi_ticket'])){
-			$data = json_decode(file_get_contents($this->config['jsapi_ticket']));
+		$cacheKey = 'jsapi_ticket';
+		if($cache === true){
+			$data = $this->cacheProvider->get($cacheKey);
 			if ($data && $data->expires_at < time()) {
 				$ticket = $data->ticket;
 			}
 		}
 		if(!$ticket){
 			$data = $this->getWechatOAuth()->getTicket();
-			$data->expires_at = time() + $data->expires_in;
 			if($cache === true){
-				$fp = fopen($this->config["jsapi_ticket"], "w");
-				fwrite($fp, json_encode($data));
-				if ($fp) fclose($fp);
+				$this->cacheProvider->set($cacheKey,$data,time() + $data->expires_in);
 			}
 			$ticket = $data->ticket;
 		}

@@ -70,4 +70,30 @@ class WechatOAuth {
 		$this->responseJSON = $this->httpClient->get($url);
 		return json_decode($this->responseJSON);
 	}
+
+	public function getSignPackage($url = null, $ticket = null){
+		if(!$url){
+			$url = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+			$url .= "{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
+		}
+		if(!$ticket) $ticket = $this->getTicket();
+		$timestamp = time();
+		$nonceStr = $this->getNonceStr();
+		$rawString = "jsapi_ticket=$ticket&noncestr=$nonceStr&timestamp=$timestamp&url=$url";
+		$signature = sha1($rawString);
+
+		$signPackage = array(
+			"appId" => $this->appId,
+			"nonceStr" => $nonceStr,
+			"timestamp" => $timestamp,
+			"url" => $url,
+			"signature" => $signature,
+			"rawString" => $rawString
+		);
+		return $signPackage;
+	}
+
+	private function getNonceStr() {
+		return substr(str_shuffle("abcdefghijklmnopqrstuvwxyz0123456789"),0,32);
+	}
 }
