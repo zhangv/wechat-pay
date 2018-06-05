@@ -71,6 +71,13 @@ class WechatOAuth {
 		return json_decode($this->responseJSON);
 	}
 
+	public function getSession($code,$accesstoken = null){
+		if(!$accesstoken) $accesstoken = $this->getAccessToken();
+		$url = "https://api.weixin.qq.com/sns/jscode2session?appid={$this->appId}&secret={$this->appSecret}&js_code=$code&grant_type=authorization_code";
+		$this->responseJSON = $this->httpClient->get($url);
+		return json_decode($this->responseJSON);
+	}
+
 	public function getSignPackage($url = null, $ticket = null){
 		if(!$url){
 			$url = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
