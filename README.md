@@ -15,7 +15,7 @@ or
 add:
 
 ```
-"zhangv/wechat-pay":"1.3.6"
+"zhangv/wechat-pay":"1.3.9"
 ```
 in composer.json
 
