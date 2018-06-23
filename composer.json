@@ -17,9 +17,10 @@
     "issues": "https://github.com/zhangv/wechat-pay/issues"
   },
   "require": {
-    "php": ">=7.1"
+    "php": ">=7.0"
   },
   "require-dev": {
+    "php": ">=7.1",
     "phpunit/phpunit": "^6.5.8",
     "squizlabs/php_codesniffer": "^2.7",
     "phpmd/phpmd": "^2.4",
