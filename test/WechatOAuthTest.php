@@ -81,6 +81,20 @@ class WechatOAuthTest extends TestCase{
 		$r = $this->wechatOauth->getAccessToken();
 		$this->assertEquals('ACCESS_TOKEN',$r);
 	}
+
+	/** @test */
+	public function getSession(){
+		$this->httpClient->method('get')->willReturn('
+		{
+		    "openid": "OPENID",
+		    "session_key": "SESSIONKEY",
+		    "unionid": "UNIONID"
+		}');
+		$this->wechatOauth->setHttpClient($this->httpClient);
+		$r = $this->wechatOauth->getSession('code');
+		$this->assertEquals('SESSIONKEY',$r->session_key);
+	}
+
 	/** @test */
 	public function getTicket(){
 		$this->httpClient->method('get')->willReturn('
@@ -95,4 +109,17 @@ class WechatOAuthTest extends TestCase{
 		$this->assertEquals('bxLdikRXVbTPdHSM05e5u5sUoXNKd8-41ZO3MhKoyN5OfkWITDGgnr2fwJ0m9E8NYzWKVZvdVtaUgWvsdshFKA',$r->ticket);
 	}
 
+	/** @test */
+	public function getSignPackage(){
+		$this->httpClient->method('get')->willReturn('
+		{"access_token":"ACCESS_TOKEN","expires_in":7200}');
+		$this->wechatOauth->setHttpClient($this->httpClient);
+		$sp = $this->wechatOauth->getSignPackage('testurl','testticket');
+		$this->assertEquals('testurl',$sp['url']);
+
+		$_SERVER['HTTP_HOST'] = 'git.com';
+		$_SERVER['REQUEST_URI'] = '/zhangv/wechat-pay';
+		$sp = $this->wechatOauth->getSignPackage(null,'testticket');
+		$this->assertEquals('appid',$sp['appId']);
+	}
 }

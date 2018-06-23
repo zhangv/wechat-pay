@@ -1,7 +1,9 @@
 <?php
 /**
- * User: derekzhangv
- * Time: 2018/5/29 16:41
+ * RedisCacheProvider
+ *
+ * @license MIT
+ * @author zhangv
  */
 namespace zhangv\wechat\cache;
 class RedisCacheProvider implements CacheProvider{

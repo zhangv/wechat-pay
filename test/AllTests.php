@@ -5,11 +5,10 @@ class AllTests extends TestSuite {
 
 	public static function suite() {
 		$suite = new TestSuite();
-		$tests = ['HttpClient','WechatPayMock','WechatOAuth'];
+		$tests = ['HttpClient','WechatPayMock','WechatOAuth','cache/RedisCacheProvider'];
 		foreach($tests as $t){
 			$filePath = __DIR__ . "/{$t}Test.php";
-			require_once($filePath);
-			$suite->addTestSuite($t . 'Test');
+			$suite->addTestFile($filePath);
 		}
 		return $suite;
 	}

@@ -1,5 +1,7 @@
 <?php
 /**
+ * WechatPay
+ *
  * @license MIT
  * @author zhangv
  */
@@ -632,15 +634,10 @@ class WechatPay {
 	 * @throws Exception
 	 */
 	public function onPaidNotify($notify_data,callable $callback = null){
-		if(!is_array($notify_data)){
-			$notify_data = $this->xml2array($notify_data);
-		}
-		if($this->validateSign($notify_data)){
-			if($callback && is_callable($callback)){
-				return call_user_func_array( $callback , [$notify_data] );
-			}
-		}else{
-			throw new Exception('Invalid paid notify data');
+		if(!is_array($notify_data)) $notify_data = $this->xml2array($notify_data);
+		if(!$this->validateSign($notify_data)) throw new Exception('Invalid paid notify data');
+		if($callback && is_callable($callback)){
+			return call_user_func_array( $callback , [$notify_data] );
 		}
 	}
 
@@ -652,15 +649,10 @@ class WechatPay {
 	 * @throws Exception
 	 */
 	public function onRefundedNotify($notify_data,callable $callback = null){
-		if(!is_array($notify_data)){
-			$notify_data = $this->xml2array($notify_data);
-		}
-		if($this->validateSign($notify_data)){
-			if($callback && is_callable($callback)){
-				return call_user_func_array( $callback ,[$notify_data] );
-			}
-		}else{
-			throw new Exception('Invalid refunded notify data');
+		if(!is_array($notify_data)) $notify_data = $this->xml2array($notify_data);
+		if(!$this->validateSign($notify_data)) throw new Exception('Invalid refund notify data');
+		if($callback && is_callable($callback)){
+			return call_user_func_array( $callback ,[$notify_data] );
 		}
 	}
 
@@ -912,19 +904,16 @@ class WechatPay {
 		if(!$this->publicKey) {
 			if (!$refresh && file_exists($this->config["rsa_pubkey_path"])) {
 				$this->publicKey = file_get_contents($this->config["rsa_pubkey_path"]);
-			}
-			$data = array();
-			$data["mch_id"] = $this->config["mch_id"];
-			$data["sign_type"] = $this->config["sign_type"];
-			$result = $this->post(self::URL_GETPUBLICKEY, $data, true);
-			$pubkey = $result['pub_key'];
-			$this->publicKey = $this->convertPKCS1toPKCS8($pubkey);
-			$fp = fopen($this->config["rsa_pubkey_path"], "w");
-			if ($fp) {
+			}else{
+				$data = array();
+				$data["mch_id"] = $this->config["mch_id"];
+				$data["sign_type"] = $this->config["sign_type"];
+				$result = $this->post(self::URL_GETPUBLICKEY, $data, true);
+				$pubkey = $result['pub_key'];
+				$this->publicKey = $this->convertPKCS1toPKCS8($pubkey);
+				$fp = @fopen($this->config["rsa_pubkey_path"], "w");
 				fwrite($fp, $this->publicKey);
 				fclose($fp);
-			} else {
-				throw new Exception("RSA public key not found");
 			}
 		}
 		return $this->publicKey;
@@ -947,7 +936,7 @@ class WechatPay {
 		if(!$pubkey) $pubkey = $this->getPublicKey();
 		$encrypted = null;
 		$pubkey = openssl_get_publickey($pubkey);
-		if (openssl_public_encrypt($data, $encrypted, $pubkey,OPENSSL_PKCS1_OAEP_PADDING))
+		if (@openssl_public_encrypt($data, $encrypted, $pubkey,OPENSSL_PKCS1_OAEP_PADDING))
 			$data = base64_encode($encrypted);
 		else
 			throw new Exception('Unable to encrypt data');
@@ -1054,6 +1043,11 @@ class WechatPay {
 
 	}
 
+	/**
+	 * @param $responseXML
+	 * @return array
+	 * @throws Exception
+	 */
 	private function processResponseXML($responseXML){
 		$result = $this->xml2array($responseXML);
 		$this->responseArray = $result;
@@ -1072,15 +1066,8 @@ class WechatPay {
 			}else{
 				return $result;
 			}
-		} else {
-			if($result["return_code"] == "FAIL"){
-				throw new Exception($this->returnMsg);
-			}else{
-				$this->resultCode = $result['result_code'];
-				$this->errCode = $result['err_code'];
-				$this->errCodeDes = $result['err_code_des'];
-				throw new Exception("[$this->errCode]$this->errCodeDes");
-			}
+		} else if($this->returnCode == 'FAIL'){
+			throw new Exception($this->returnMsg);
 		}
 	}
 
@@ -1113,7 +1100,7 @@ class WechatPay {
 
 	private function xml2array($xml) {
 		$array = array();
-		$tmp = array();
+		$tmp = null;
 		try{
 			$tmp = (array) simplexml_load_string($xml);
 		}catch(Exception $e){

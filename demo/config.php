@@ -1,4 +1,5 @@
 <?php
+//php -S localhost:8000 -t vendor/zhangv/wechat-pay/demo
 
 return [
 	'mch_id'            => 'XXXX', //商户号

@@ -33,6 +33,7 @@ class WechatPayMockTest extends TestCase{
 		$this->wechatPay = new WechatPay($config);
 		$this->httpClient = $this->createMock(HttpClient::class);
 		$this->wechatOauth = $this->createMock(WechatOAuth::class);
+		$this->wechatPay->setCacheProvider(new \zhangv\wechat\cache\JsonFileCacheProvider());
 	}
 
 	/** @test */
@@ -668,6 +669,7 @@ REPB3hPF1Z75O6LwuLfyPiCrCTmVoyfqjwIDAQAB
 ]]></pub_key>
 			</xml>");
 		$this->wechatPay->setHttpClient($this->httpClient);
+		$this->wechatPay->sandbox = true;
 		$result = $this->wechatPay->getPublicKey(true);
 		$this->assertEquals('-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArT82k67xybiJS9AD8nNA
@@ -678,6 +680,7 @@ DCXAbSZkWBJekY4nGZtK1erqGRve8JbxTWirAm/s08rUrjOuZFA21/EI2nea3Did
 JMTVnXVPY2qcAjF+595shwUKyTjKB8v1REPB3hPF1Z75O6LwuLfyPiCrCTmVoyfq
 jwIDAQAB
 -----END PUBLIC KEY-----',$result);
+		$this->wechatPay->setPublicKey(null);//unset the pubkey
 		$result = $this->wechatPay->getPublicKey();
 		$this->assertEquals('-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArT82k67xybiJS9AD8nNA
@@ -703,6 +706,20 @@ jwIDAQAB
 		$this->assertEquals('9A0A8659F005D6984697E2CA0A9CF3B7',$md5);
 		$sha256 = $this->wechatPay->sign($data,WechatPay::SIGNTYPE_HMACSHA256);
 		$this->assertEquals('6A9AE1657590FD6257D693A078E1C3E4BB6BA4DC30B23E0EE2496E54170DACD6',$sha256);
+	}
+	/** @test */
+	public function validateSign(){
+		$data = ['a'=>'b'];
+		$this->assertFalse($this->wechatPay->validateSign($data));
+	}
+
+	/**
+	 * @test
+	 * @expectedException Exception
+	 */
+	public function sign_notsupportedmethod(){
+		$data = ['a'=>'b'];
+		$this->wechatPay->sign($data,'nomethod');
 	}
 
 	/** @test */
@@ -876,22 +893,22 @@ jwIDAQAB
 	 */
 	public function onPaidNotify(){
 		$notifydata = ['a'=>'b'];
-		$sign = $this->wechatPay->sign($notifydata);
-		$notifydata['sign'] = $sign;
-		$r = $this->wechatPay->onPaidNotify($notifydata, function($data){
+		$notifydata['sign'] = $this->wechatPay->sign($notifydata);
+		$notifyxml = "<xml><a>b</a><sign>{$notifydata['sign']}</sign></xml>";
+		$r = $this->wechatPay->onPaidNotify($notifyxml, function($data){
 			return $data;
 		});
-		$this->assertEquals($sign,$r['sign']);
+		$this->assertEquals('b',$r['a']);
 	}
 	/** @test */
 	public function onRefundedNotify(){
 		$notifydata = ['a'=>'b'];
-		$sign = $this->wechatPay->sign($notifydata);
-		$notifydata['sign'] = $sign;
-		$r = $this->wechatPay->onRefundedNotify($notifydata, function($data){
+		$notifydata['sign'] = $this->wechatPay->sign($notifydata);
+		$notifyxml = "<xml><a>b</a><sign>{$notifydata['sign']}</sign></xml>";
+		$r = $this->wechatPay->onRefundedNotify($notifyxml, function($data){
 			return $data;
 		});
-		$this->assertEquals($sign,$r['sign']);
+		$this->assertEquals($notifydata['sign'],$r['sign']);
 	}
 
 	/**
@@ -910,6 +927,21 @@ jwIDAQAB
 	}
 
 	/**
+	 * 退款结果返回异常
+	 * @test
+	 * @expectedException Exception
+	 * @expectedExceptionMessageRegExp /Invalid refund notify data/
+	 */
+	public function onRefundNotifyException(){
+		$notifydata = ['a'=>'b'];
+		$sign = 'wrong sign';
+		$notifydata['sign'] = $sign;
+		$this->wechatPay->onRefundedNotify($notifydata, function($data){
+			return $data;
+		});
+	}
+
+	/**
 	 * @test
 	 */
 	public function rsaEncrypt(){
@@ -922,6 +954,16 @@ DCXAbSZkWBJekY4nGZtK1erqGRve8JbxTWirAm/s08rUrjOuZFA21/EI2nea3Did
 JMTVnXVPY2qcAjF+595shwUKyTjKB8v1REPB3hPF1Z75O6LwuLfyPiCrCTmVoyfq
 jwIDAQAB
 -----END PUBLIC KEY-----';
+		$result = $this->wechatPay->rsaEncrypt('a',$pubkey);
+		$this->assertNotEmpty($result);
+	}
+
+	/**
+	 * @test
+	 * @expectedException Exception
+	 */
+	public function rsaEncryptFail(){
+		$pubkey = 'fakekey';
 		$result = $this->wechatPay->rsaEncrypt('a',$pubkey);
 		$this->assertNotEmpty($result);
 	}

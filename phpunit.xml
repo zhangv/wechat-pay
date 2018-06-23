@@ -3,7 +3,8 @@
          backupGlobals="false"
          backupStaticAttributes="false"
          strict="true"
-         verbose="true">
+         verbose="true"
+         printerClass="Codedungeon\PHPUnitPrettyResultPrinter\Printer">
 
 	<testsuites>
 		<testsuite name="wechat-pay">
