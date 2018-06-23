@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/../src/HttpClient.php';
 use zhangv\wechat\HttpClient;
 use PHPUnit\Framework\TestCase;
 

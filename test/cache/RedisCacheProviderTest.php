@@ -1,7 +1,7 @@
 <?php
 /**
- * User: derekzhangv
- * Time: 2018/6/22 17:25
+ * @license MIT
+ * @author zhangv
  */
 
 use zhangv\wechat\cache\RedisCacheProvider;

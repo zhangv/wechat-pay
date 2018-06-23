@@ -16,40 +16,41 @@ class WechatPay {
 	const SIGNTYPE_MD5 = 'MD5', SIGNTYPE_HMACSHA256 = 'HMAC-SHA256';
 	const CHECKNAME_FORCECHECK = 'FORCE_CHECK',CHECKNAME_NOCHECK = 'NO_CHECK';
 	const ACCOUNTTYPE_BASIC = 'Basic',ACCOUNTTYPE_OPERATION = 'Operation',ACCOUNTTYPE_FEES = 'Fees';
+	const API_ENDPOINT = 'https://api.mch.weixin.qq.com/';
 	/** 支付 */
-	const URL_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder";
-	const URL_ORDERQUERY = "https://api.mch.weixin.qq.com/pay/orderquery";
-	const URL_CLOSEORDER = 'https://api.mch.weixin.qq.com/pay/closeorder';
-	const URL_REFUND = 'https://api.mch.weixin.qq.com/secapi/pay/refund';
-	const URL_REFUNDQUERY = 'https://api.mch.weixin.qq.com/pay/refundquery';
-	const URL_DOWNLOADBILL = 'https://api.mch.weixin.qq.com/pay/downloadbill';
-	const URL_DOWNLOAD_FUND_FLOW = 'https://api.mch.weixin.qq.com/pay/downloadfundflow';
-	const URL_REPORT = 'https://api.mch.weixin.qq.com/payitil/report';
-	const URL_SHORTURL = 'https://api.mch.weixin.qq.com/tools/shorturl';
-	const URL_MICROPAY = 'https://api.mch.weixin.qq.com/pay/micropay';
-	const URL_GETHBINFO = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo';
-	const URL_BATCHQUERYCOMMENT = 'https://api.mch.weixin.qq.com/billcommentsp/batchquerycomment';
-	const URL_REVERSE = 'https://api.mch.weixin.qq.com/secapi/pay/reverse';
-	const URL_AUTHCODETOOPENID = 'https://api.mch.weixin.qq.com/tools/authcodetoopenid';
+	const URL_UNIFIEDORDER = 'pay/unifiedorder';
+	const URL_ORDERQUERY = 'pay/orderquery';
+	const URL_CLOSEORDER = 'pay/closeorder';
+	const URL_REFUND = 'secapi/pay/refund';
+	const URL_REFUNDQUERY = 'pay/refundquery';
+	const URL_DOWNLOADBILL = 'pay/downloadbill';
+	const URL_DOWNLOAD_FUND_FLOW = 'pay/downloadfundflow';
+	const URL_REPORT = 'payitil/report';
+	const URL_SHORTURL = 'tools/shorturl';
+	const URL_MICROPAY = 'pay/micropay';
+	const URL_GETHBINFO = 'mmpaymkttransfers/gethbinfo';
+	const URL_BATCHQUERYCOMMENT = 'billcommentsp/batchquerycomment';
+	const URL_REVERSE = 'secapi/pay/reverse';
+	const URL_AUTHCODETOOPENID = 'tools/authcodetoopenid';
 	/** 红包 */
-	const URL_SENDREDPACK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack';
-	const URL_SENDGROUPREDPACK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendgroupredpack';
+	const URL_SENDREDPACK = 'mmpaymkttransfers/sendredpack';
+	const URL_SENDGROUPREDPACK = 'mmpaymkttransfers/sendgroupredpack';
 	/** 企业付款 */
-	const URL_TRANSFER_WALLET = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers';
-	const URL_QUERY_TRANSFER_WALLET = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gettransferinfo';
-	const URL_TRANSFER_BANKCARD = 'https://api.mch.weixin.qq.com/mmpaysptrans/pay_bank';
-	const URL_QUERY_TRANSFER_BANKCARD = 'https://api.mch.weixin.qq.com/mmpaysptrans/query_bank';
+	const URL_TRANSFER_WALLET = 'mmpaymkttransfers/promotion/transfers';
+	const URL_QUERY_TRANSFER_WALLET = 'mmpaymkttransfers/gettransferinfo';
+	const URL_TRANSFER_BANKCARD = 'mmpaysptrans/pay_bank';
+	const URL_QUERY_TRANSFER_BANKCARD = 'mmpaysptrans/query_bank';
 	/** 代金券 */
-	const URL_SEND_COUPON = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/send_coupon';
-	const URL_QUERY_COUPON_STOCK = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/query_coupon_stock';
-	const URL_QUERY_COUPON_INFO = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/querycouponsinfo';
+	const URL_SEND_COUPON = 'mmpaymkttransfers/send_coupon';
+	const URL_QUERY_COUPON_STOCK = 'mmpaymkttransfers/query_coupon_stock';
+	const URL_QUERY_COUPON_INFO = 'mmpaymkttransfers/querycouponsinfo';
 	/** Sandbox获取测试公钥 */
 	const URL_GETPUBLICKEY = 'https://fraud.mch.weixin.qq.com/risk/getpublickey';
 	public static $BANKCODE = ['工商银行' => '1002', '农业银行' => '1005', '中国银行' => '1026', '建设银行' => '1003', '招商银行' => '1001',
 		'邮储银行' => '1066', '交通银行' => '1020', '浦发银行' => '1004', '民生银行' => '1006', '兴业银行' => '1009', '平安银行' => '1010',
 		'中信银行' => '1021', '华夏银行' => '1025', '广发银行' => '1027', '光大银行' => '1022', '北京银行' => '1032', '宁波银行' => '1056',];
 
-	public $getSignKeyUrl = "https://api.mch.weixin.qq.com/sandboxnew/pay/getsignkey";
+	public $getSignKeyUrl = "sandboxnew/pay/getsignkey";
 	public $sandbox = false;
 
 	/** @var string */
@@ -719,8 +720,7 @@ class WechatPay {
 		if($return_msg) $data["return_msg"] = $return_msg;
 		if($err_code) $data["err_code"] = $err_code;
 		if($err_code_des) $data["err_code_des"] = $err_code_des;
-		$result = $this->post(self::URL_REPORT, $data, false);
-		return $result;
+		return $this->post(self::URL_REPORT, $data, false);
 	}
 
 	/**
@@ -989,7 +989,7 @@ class WechatPay {
 		$cacheKey = 'jsapi_ticket';
 		if($cache === true){
 			$data = $this->cacheProvider->get($cacheKey);
-			if ($data && $data->expires_at < time()) {
+			if ($data && $data->expires_at > time()) {
 				$ticket = $data->ticket;
 			}
 		}
@@ -1028,12 +1028,9 @@ class WechatPay {
 		if(in_array($url,[self::URL_DOWNLOADBILL,self::URL_DOWNLOAD_FUND_FLOW,self::URL_BATCHQUERYCOMMENT])){
 			$processResponse = false;
 		}
-		if($this->sandbox === true){
-			$host = "https://api.mch.weixin.qq.com";
-			$url = str_replace($host,'',$url);
-			$url = "{$host}/sandboxnew{$url}";
-		}
-		$content = $this->httpClient->post($url,$this->requestXML,[],$opts);
+		if($this->sandbox === true) $url = "sandboxnew/{$url}";
+
+		$content = $this->httpClient->post(self::API_ENDPOINT . $url,$this->requestXML,[],$opts);
 		if(!$content) throw new Exception("Empty response with {$this->requestXML}");
 
 		$this->responseXML = $content;
@@ -1099,13 +1096,8 @@ class WechatPay {
 	}
 
 	private function xml2array($xml) {
-		$array = array();
-		$tmp = null;
-		try{
-			$tmp = (array) simplexml_load_string($xml);
-		}catch(Exception $e){
-			throw $e;
-		}
+		$array = [];
+		$tmp = (array) simplexml_load_string($xml);
 		foreach ( $tmp as $k => $v) {
 			$array[$k] = (string) $v;
 		}

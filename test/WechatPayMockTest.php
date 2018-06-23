@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . "/../demo/autoload.php";
 use PHPUnit\Framework\TestCase;
 use zhangv\wechat\WechatPay;
 use zhangv\wechat\HttpClient;
@@ -737,6 +736,8 @@ jwIDAQAB
 		$t = $this->wechatPay->getTicket(true);
 		$this->assertEquals('bxLdikRXVbTPdHSM05e5u5sUoXNKdvsdshFKA',$t);
 		$this->wechatPay->getCacheProvider()->clear('jsapi_ticket');
+		$this->wechatPay->setWechatOAuth(null);
+		$this->wechatPay->getWechatOAuth();
 	}
 
 	/** @test */
@@ -883,6 +884,20 @@ jwIDAQAB
 		$this->httpClient->method('post')->willReturn(
 			"<xml><return_code>SUCCESS</return_code><return_msg>OK</return_msg><result_code>FAIL</result_code>
 			<err_code>NOAUTH</err_code><err_code_des>商户无此接口权限</err_code_des></xml>");
+		$this->wechatPay->setHttpClient($this->httpClient);
+		$this->wechatPay->getPrepayId("", "", 1, 'openid', 'ext');
+	}
+
+	/**
+	 * 应用错误
+	 * @test
+	 * @expectedException Exception
+	 * @expectedExceptionMessage No return code presents
+	 */
+	public function application_NoReturnCode(){
+		$this->httpClient->method('post')->willReturn(
+			"<xml><return_msg>OK</return_msg><result_code>FAIL</result_code>
+			<err_code>NOAUTH</err_code><err_code_des>缺少returcode</err_code_des></xml>");
 		$this->wechatPay->setHttpClient($this->httpClient);
 		$this->wechatPay->getPrepayId("", "", 1, 'openid', 'ext');
 	}
