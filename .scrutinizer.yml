@@ -1,0 +1,14 @@
+checks:
+    php: true
+filter:
+    excluded_paths:
+        - test/*
+
+build:
+    tests:
+        override:
+            -
+                command: ./vendor/bin/phpunit test/AllTests.php --coverage-clover=coverage.xml
+                coverage:
+                    file: coverage.xml
+                    format: php-clover

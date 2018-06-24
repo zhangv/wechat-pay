@@ -28,11 +28,11 @@ class WechatPay {
 	const URL_REPORT = 'payitil/report';
 	const URL_SHORTURL = 'tools/shorturl';
 	const URL_MICROPAY = 'pay/micropay';
-	const URL_GETHBINFO = 'mmpaymkttransfers/gethbinfo';
 	const URL_BATCHQUERYCOMMENT = 'billcommentsp/batchquerycomment';
 	const URL_REVERSE = 'secapi/pay/reverse';
 	const URL_AUTHCODETOOPENID = 'tools/authcodetoopenid';
 	/** 红包 */
+	const URL_GETHBINFO = 'mmpaymkttransfers/gethbinfo';
 	const URL_SENDREDPACK = 'mmpaymkttransfers/sendredpack';
 	const URL_SENDGROUPREDPACK = 'mmpaymkttransfers/sendgroupredpack';
 	/** 企业付款 */
