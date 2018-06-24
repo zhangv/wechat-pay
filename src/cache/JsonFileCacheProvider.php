@@ -18,9 +18,10 @@ class JsonFileCacheProvider implements CacheProvider{
 		$data = $jsonobj;
 		$data->expires_at = $expireAt;
 		$file = "{$this->cacheDir}/{$key}.json";
-		$fp = fopen($file, "w");
-		fwrite($fp, json_encode($data));
-		if ($fp) fclose($fp);
+		if($fp = @fopen($file, "w")){
+			fwrite($fp, json_encode($data));
+			fclose($fp);
+		}
 	}
 
 	public function get($key){

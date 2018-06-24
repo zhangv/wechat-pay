@@ -1,6 +1,7 @@
 checks:
     php: true
 filter:
+    paths: ["src/*", "demo/*"]
     excluded_paths:
         - test/*
 

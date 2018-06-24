@@ -225,7 +225,7 @@ class WechatPay {
 	 * @ref https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
 	 * @param array $params
 	 * @throws Exception
-	 * @return string JSON
+	 * @return array
 	 */
 	public function unifiedOrder($params) {
 		$data = array();
@@ -911,9 +911,10 @@ class WechatPay {
 				$result = $this->post(self::URL_GETPUBLICKEY, $data, true);
 				$pubkey = $result['pub_key'];
 				$this->publicKey = $this->convertPKCS1toPKCS8($pubkey);
-				$fp = @fopen($this->config["rsa_pubkey_path"], "w");
-				fwrite($fp, $this->publicKey);
-				fclose($fp);
+				if($fp = @fopen($this->config["rsa_pubkey_path"], "w")) {
+					fwrite($fp, $this->publicKey);
+					fclose($fp);
+				}
 			}
 		}
 		return $this->publicKey;
@@ -1037,7 +1038,6 @@ class WechatPay {
 		if($processResponse)
 			return $this->processResponseXML($this->responseXML);
 		else return $this->responseXML;
-
 	}
 
 	/**
