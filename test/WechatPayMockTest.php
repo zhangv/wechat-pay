@@ -416,31 +416,4 @@ class WechatPayMockTest extends TestCase{
 		});
 	}
 
-	/**
-	 * @test
-	 */
-	public function rsaEncrypt(){
-		$pubkey = '-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArT82k67xybiJS9AD8nNA
-euDYdrtCRaxkS6cgs8L9h83eqlDTlrdwzBVSv5V4imTq/URbXn4K0V/KJ1TwDrqO
-I8hamGB0fvU13WW1NcJuv41RnJVua0QAlS3tS1JzOZpMS9BEGeFvyFF/epbi/m9+
-2kUWG94FccArNnBtBqqvFncXgQsm98JB3a62NbS1ePP/hMI7Kkz+JNMyYsWkrOUF
-DCXAbSZkWBJekY4nGZtK1erqGRve8JbxTWirAm/s08rUrjOuZFA21/EI2nea3Did
-JMTVnXVPY2qcAjF+595shwUKyTjKB8v1REPB3hPF1Z75O6LwuLfyPiCrCTmVoyfq
-jwIDAQAB
------END PUBLIC KEY-----';
-		$result = $this->wechatPay->rsaEncrypt('a',$pubkey);
-		$this->assertNotEmpty($result);
-	}
-
-	/**
-	 * @test
-	 * @expectedException Exception
-	 */
-	public function rsaEncryptFail(){
-		$pubkey = 'fakekey';
-		$result = $this->wechatPay->rsaEncrypt('a',$pubkey);
-		$this->assertNotEmpty($result);
-	}
-
 }

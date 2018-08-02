@@ -129,7 +129,7 @@ class WechatPay {
 	 * @return mixed
 	 */
 	public static function __callStatic($name, $config) {
-		return self::load($name, $config);
+		return self::load($name, ...$config);
 	}
 
 	public function setWechatOAuth($wechatOAuth){
@@ -305,7 +305,7 @@ class WechatPay {
 	}
 
 	/**
-	 * 申请退款 - 使用商户订单号
+	 * 退款 - 使用商户订单号
 	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_4
 	 * @link  https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_4
 	 * @param $out_trade_no string 商户订单号
@@ -327,9 +327,7 @@ class WechatPay {
 	}
 
 	/**
-	 * 申请退款 - 使用微信订单号
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_4
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_4
+	 * 退款 - 使用微信订单号
 	 * @param $transaction_id string 微信订单号
 	 * @param $out_refund_no string 商户退款单号
 	 * @param $total_fee int 总金额（单位：分）

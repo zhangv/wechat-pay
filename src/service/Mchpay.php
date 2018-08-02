@@ -148,4 +148,5 @@ class Mchpay extends WechatPay {
 		$key = "-----BEGIN PUBLIC KEY-----\n" . wordwrap($key, 64, "\n", true) . "\n-----END PUBLIC KEY-----";
 		return $key;
 	}
+
 }

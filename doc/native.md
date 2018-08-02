@@ -1,9 +1,8 @@
-<?php
+# 扫码支付 
 
-//扫码支付
-require_once __DIR__ . "/autoload.php";
-use zhangv\wechat\pay\WechatPay;
-
+Step 1 - create QR
+```php
+<?
 $cfg = include './config.php';
 $payment = WechatPay::Native($cfg);
 $orderid = date('YmdHis');
@@ -26,3 +25,20 @@ $codeurl = $payment->getCodeUrl($desc, $orderid, $amt,$productid);
 		jQuery('#qrcode').qrcode({width: 200,height: 200,text: "<?=$codeurl?>"});
 	});
 </script>
+```
+
+
+Step 2 - handle the notification
+
+[paidnotify.php](demo/paidnotify.php)
+
+
+Step 3 - query order
+
+```php
+$cfg = include './config.php';
+$payment = WechatPay::Native($cfg);
+$result = $payment->queryOrderByOutTradeNo($orderno);
+var_dump($result);
+
+```
