@@ -5,7 +5,7 @@
  * @license MIT
  * @author zhangv
  */
-namespace zhangv\wechat\cache;
+namespace zhangv\wechat\pay\cache;
 class RedisCacheProvider implements CacheProvider{
 	/** @var Redis */
 	private $redis = null;

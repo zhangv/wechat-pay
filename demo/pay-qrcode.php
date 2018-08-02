@@ -2,11 +2,11 @@
 
 //扫码支付
 require_once __DIR__ . "/autoload.php";
-use zhangv\wechat\WechatPay;
+use zhangv\wechat\pay\WechatPay;
 
 $cfg = include './config.php';
 
-$payment = new WechatPay($cfg);
+$payment = WechatPay::Native($cfg);
 $orderid = date('YmdHis');
 $ext = ['attach'=>''];
 $desc = "desc$stamp";

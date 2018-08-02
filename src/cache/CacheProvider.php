@@ -5,7 +5,7 @@
  * @license MIT
  * @author zhangv
  */
-namespace zhangv\wechat\cache;
+namespace zhangv\wechat\pay\cache;
 
 interface CacheProvider{
 	function set($key,$value,$expireAt);

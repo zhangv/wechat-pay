@@ -1,6 +1,6 @@
 <?php
 use PHPUnit\Framework\TestCase;
-use zhangv\wechat\WechatPay;
+use zhangv\wechat\pay\WechatPay;
 
 class WechatPayTest extends TestCase{
 	/**

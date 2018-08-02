@@ -2,7 +2,7 @@
 
 //OAuth授权回调
 require_once __DIR__ . "/autoload.php";
-use zhangv\wechat\WechatOAuth;
+use zhangv\wechat\pay\util\WechatOAuth;
 
 if (isset($_GET['code'])){
 	$cfg = require './config.php';

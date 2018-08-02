@@ -3,6 +3,8 @@
 [![License](https://poser.pugx.org/zhangv/wechat-pay/license)](https://packagist.org/packages/zhangv/wechat-pay)
 [![Build Status](https://travis-ci.org/zhangv/wechat-pay.svg?branch=master)](https://travis-ci.org/zhangv/wechat-pay)
 [![codecov](https://codecov.io/gh/zhangv/wechat-pay/branch/master/graph/badge.svg)](https://codecov.io/gh/zhangv/wechat-pay)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/zhangv/wechat-pay/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/zhangv/wechat-pay/?branch=master)
+[![Author](https://img.shields.io/badge/author-zhangv-green.svg)](https://zhangv.com)
 
 #### simplest, minimal dependency
 
@@ -40,8 +42,6 @@ return [
 ```
 Step 2 - Pay
 ```php
- require_once __DIR__ ."/../src/WechatPay.php";
- use zhangv\wechat\WechatPay;
  $cfg = include './config.php';
  
  if(empty( $_REQUEST['openid'])) {
@@ -50,7 +50,7 @@ Step 2 - Pay
  	exit;
  }
  
- $payment = new WechatPay($cfg);
+ $payment = new WechatPay::Jsapi($cfg);
  $openid = $_REQUEST['openid'];
  $stamp = date('YmdHis');
  $ext = ['attach'=>''];

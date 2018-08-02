@@ -1,5 +1,5 @@
 <?php
-use zhangv\wechat\HttpClient;
+use zhangv\wechat\pay\util\HttpClient;
 use PHPUnit\Framework\TestCase;
 
 class HttpClientTest extends TestCase{

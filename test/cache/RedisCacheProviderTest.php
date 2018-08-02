@@ -4,7 +4,7 @@
  * @author zhangv
  */
 
-use zhangv\wechat\cache\RedisCacheProvider;
+use zhangv\wechat\pay\cache\RedisCacheProvider;
 use PHPUnit\Framework\TestCase;
 
 class RedisCacheProviderTest extends TestCase{

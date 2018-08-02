@@ -1,6 +1,6 @@
 <?php
-use zhangv\wechat\HttpClient;
-use zhangv\wechat\WechatOAuth;
+use zhangv\wechat\pay\util\HttpClient;
+use zhangv\wechat\pay\util\WechatOAuth;
 use PHPUnit\Framework\TestCase;
 
 class WechatOAuthTest extends TestCase{

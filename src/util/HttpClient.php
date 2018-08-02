@@ -5,7 +5,7 @@
  * @license MIT
  * @author zhangv
  */
-namespace zhangv\wechat;
+namespace zhangv\wechat\pay\util;
 
 class HttpClient{
 

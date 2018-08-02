@@ -5,12 +5,30 @@
  * @license MIT
  * @author zhangv
  */
-namespace zhangv\wechat;
+namespace zhangv\wechat\pay;
 
 use \Exception;
-use zhangv\wechat\cache\CacheProvider;
-use zhangv\wechat\cache\JsonFileCacheProvider;
+use zhangv\wechat\pay\util\HttpClient;
+use zhangv\wechat\pay\util\WechatOAuth;
+use zhangv\wechat\pay\cache\CacheProvider;
+use zhangv\wechat\pay\cache\JsonFileCacheProvider;
 
+/**
+ * Class WechatPay
+ * @package zhangv\wechat
+ * @author zhangv
+ * @license MIT
+ *
+ * @method static service\App       App(array $config)
+ * @method static service\Jsapi     Jsapi(array $config)
+ * @method static service\Micro     Micro(array $config)
+ * @method static service\Mweb      Mweb(array $config)
+ * @method static service\Native    Native(array $config)
+ * @method static service\Weapp     Weapp(array $config)
+ * @method static service\Mchpay    Mchpay(array $config)
+ * @method static service\Redpack   Redpack(array $config)
+ * @method static service\Coupon    Coupon(array $config)
+ */
 class WechatPay {
 	const TRADETYPE_JSAPI = 'JSAPI',TRADETYPE_NATIVE = 'NATIVE',TRADETYPE_APP = 'APP',TRADETYPE_MWEB = 'MWEB';
 	const SIGNTYPE_MD5 = 'MD5', SIGNTYPE_HMACSHA256 = 'HMAC-SHA256';
@@ -46,9 +64,12 @@ class WechatPay {
 	const URL_QUERY_COUPON_INFO = 'mmpaymkttransfers/querycouponsinfo';
 	/** Sandbox获取测试公钥 */
 	const URL_GETPUBLICKEY = 'https://fraud.mch.weixin.qq.com/risk/getpublickey';
-	public static $BANKCODE = ['工商银行' => '1002', '农业银行' => '1005', '中国银行' => '1026', '建设银行' => '1003', '招商银行' => '1001',
-		'邮储银行' => '1066', '交通银行' => '1020', '浦发银行' => '1004', '民生银行' => '1006', '兴业银行' => '1009', '平安银行' => '1010',
-		'中信银行' => '1021', '华夏银行' => '1025', '广发银行' => '1027', '光大银行' => '1022', '北京银行' => '1032', '宁波银行' => '1056',];
+	public static $BANKCODE = [
+		'工商银行' => '1002', '农业银行' => '1005', '中国银行' => '1026', '建设银行' => '1003', '招商银行' => '1001',
+		'邮储银行' => '1066', '交通银行' => '1020', '浦发银行' => '1004', '民生银行' => '1006', '兴业银行' => '1009',
+		'平安银行' => '1010', '中信银行' => '1021', '华夏银行' => '1025', '广发银行' => '1027', '光大银行' => '1022',
+		'北京银行' => '1032', '宁波银行' => '1056',
+	];
 
 	public $getSignKeyUrl = "sandboxnew/pay/getsignkey";
 	public $sandbox = false;
@@ -72,11 +93,11 @@ class WechatPay {
 	/** @var array */
 	public $responseArray = null;
 	/** @var array */
-	private $config;
+	protected $config;
 	/** @var HttpClient */
-	private $httpClient = null;
+	protected $httpClient = null;
 	/** @var WechatOAuth */
-	private $wechatOAuth = null;
+	protected $wechatOAuth = null;
 	/** @var string */
 	public $publicKey = null;
 	/** @var CacheProvider */
@@ -89,6 +110,26 @@ class WechatPay {
 		$this->config = $config;
 		$this->httpClient = new HttpClient(5);
 		$this->cacheProvider = new JsonFileCacheProvider();
+	}
+
+	/**
+	 * @param string $name
+	 * @param string $config
+	 * @return mixed
+	 */
+	private static function load($name, $config) {
+		$service = __NAMESPACE__ . "\\service\\{$name}";
+		return new $service($config);
+	}
+
+	/**
+	 * @param string $name
+	 * @param array  $arguments
+	 *
+	 * @return mixed
+	 */
+	public static function __callStatic($name, $arguments) {
+		return self::load($name, ...$arguments);
 	}
 
 	public function setWechatOAuth($wechatOAuth){
@@ -123,106 +164,8 @@ class WechatPay {
 	}
 
 	/**
-	 * 获取JSAPI(公众号/小程序)的预支付单信息(prepay_id)
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
-	 * @param $body string 内容
-	 * @param $out_trade_no string 商户订单号
-	 * @param $total_fee int 总金额
-	 * @param $openid string openid
-	 * @param $spbill_create_ip
-	 * @param $ext array
-	 * @return string
-	 * @throws \Exception
-	 */
-	public function getPrepayId($body,$out_trade_no,$total_fee,$openid,$spbill_create_ip = null,$ext = null) {
-		$data = ($ext && is_array($ext))?$ext:array();
-		$data["body"]         = $body;
-		$data["out_trade_no"] = $out_trade_no;
-		$data["total_fee"]    = $total_fee;
-		$data["spbill_create_ip"] = $spbill_create_ip?:$_SERVER["REMOTE_ADDR"];
-		$data["notify_url"]   = $this->config["notify_url"];
-		$data["trade_type"]   = WechatPay::TRADETYPE_JSAPI;
-		if(!$openid) throw new Exception('openid is required when trade_type is JSAPI');
-		$data["openid"]   = $openid;
-		$result = $this->unifiedOrder($data);
-		return $result["prepay_id"];
-	}
-
-	/**
-	 * 获取APP的的预支付单信息(prepay_id)(注意这里的appid是从开放平台申请的)
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=9_1
-	 * @param $body string 内容
-	 * @param $out_trade_no string 商户订单号
-	 * @param $total_fee int 总金额
-	 * @param $spbill_create_ip string 终端ID
-	 * @param $ext array
-	 * @return string
-	 */
-	public function getPrepayIdAPP($body,$out_trade_no,$total_fee,$spbill_create_ip,$ext = null) {
-		$data = ($ext && is_array($ext))?$ext:array();
-		$data["body"]         = $body;
-		$data["out_trade_no"] = $out_trade_no;
-		$data["total_fee"]    = $total_fee;
-		$data["spbill_create_ip"] = $spbill_create_ip;
-		$data["notify_url"]   = $this->config["notify_url"];
-		$data["trade_type"]   = WechatPay::TRADETYPE_APP;
-		$result = $this->unifiedOrder($data);
-		return $result["prepay_id"];
-	}
-
-	/**
-	 * 扫码支付(模式二)获取支付二维码
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=9_1
-	 * @param $body
-	 * @param $out_trade_no
-	 * @param $total_fee
-	 * @param $product_id
-	 * @param $spbill_create_ip string 本地IP
-	 * @param $ext array
-	 * @return string
-	 * @throws Exception
-	 */
-	public function getCodeUrl($body,$out_trade_no,$total_fee,$product_id,$spbill_create_ip = null,$ext = null){
-		$data = ($ext && is_array($ext))?$ext:array();
-		$data["body"]         = $body;
-		$data["out_trade_no"] = $out_trade_no;
-		$data["total_fee"]    = $total_fee;
-		$data["spbill_create_ip"] = $spbill_create_ip?:$_SERVER["SERVER_ADDR"];
-		$data["notify_url"]   = $this->config["notify_url"];
-		$data["trade_type"]   = self::TRADETYPE_NATIVE;
-		if(!$product_id) throw new Exception('product_id is required when trade_type is NATIVE');
-		$data["product_id"]   = $product_id;
-		$result = $this->unifiedOrder($data);
-		return $result["code_url"];
-	}
-
-	/**
-	 * H5支付获取支付跳转链接
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/H5.php?chapter=9_20&index=1
-	 * @param $body string 商品描述
-	 * @param $out_trade_no string 商户订单号
-	 * @param $total_fee int 总金额(分)
-	 * @param $ext array
-	 * @return string
-	 * @throws Exception
-	 */
-	public function getMwebUrl($body,$out_trade_no,$total_fee,$ext = null){
-		$data = ($ext && is_array($ext))?$ext:array();
-		$data["body"]         = $body;
-		$data["out_trade_no"] = $out_trade_no;
-		$data["total_fee"]    = $total_fee;
-		$data["spbill_create_ip"] = isset($_SERVER["REMOTE_ADDR"])?$_SERVER["REMOTE_ADDR"]:'';
-		$data["notify_url"]   = $this->config["notify_url"];
-		$data["trade_type"]   = self::TRADETYPE_MWEB;
-		if(!isset($this->config['h5_scene_info'])) throw new Exception('h5_scene_info should be configured');
-		$data["scene_info"]   = json_encode($this->config['h5_scene_info']);
-		$result = $this->unifiedOrder($data);
-		return $result["mweb_url"];
-	}
-
-	/**
 	 * 统一下单接口
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
+	 * @link https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
 	 * @param array $params
 	 * @throws Exception
 	 * @return array
@@ -257,7 +200,7 @@ class WechatPay {
 
 	/**
 	 * 查询订单（根据微信订单号）
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_2
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_2
 	 * @param $transaction_id string 微信订单号
 	 * @return array
 	 */
@@ -271,7 +214,7 @@ class WechatPay {
 
 	/**
 	 * 查询订单（根据商户订单号）
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_2
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_2
 	 * @param $out_trade_no string 商户订单号
 	 * @return array
 	 */
@@ -285,7 +228,7 @@ class WechatPay {
 
 	/**
 	 * 查询退款（根据微信订单号）
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
 	 * @param $transaction_id string 微信交易号
 	 * @param $offset int 偏移
 	 * @return array
@@ -301,7 +244,7 @@ class WechatPay {
 
 	/**
 	 * 查询退款（根据商户订单号）
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
 	 * @param $out_trade_no string 商户交易号
 	 * @param $offset int 偏移
 	 * @return array
@@ -317,7 +260,7 @@ class WechatPay {
 
 	/**
 	 * 查询退款（根据微信退款单号）
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
 	 * @param $refund_id string 微信退款单号
 	 * @param $offset int 偏移
 	 * @return array
@@ -333,7 +276,7 @@ class WechatPay {
 
 	/**
 	 * 查询退款（根据商户退款单号）
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
 	 * @param $out_refund_no string 商户退款单号
 	 * @param $offset int 偏移
 	 * @return array
@@ -349,7 +292,7 @@ class WechatPay {
 
 	/**
 	 * 关闭订单
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_3
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_3
 	 * @param $out_trade_no string 商户订单号
 	 * @return array
 	 */
@@ -363,8 +306,8 @@ class WechatPay {
 
 	/**
 	 * 申请退款 - 使用商户订单号
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_4
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_4
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_4
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_4
 	 * @param $out_trade_no string 商户订单号
 	 * @param $out_refund_no string 商户退款单号
 	 * @param $total_fee int 总金额（单位：分）
@@ -385,8 +328,8 @@ class WechatPay {
 
 	/**
 	 * 申请退款 - 使用微信订单号
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_4
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_4
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_4
+	 * @link  https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_4
 	 * @param $transaction_id string 微信订单号
 	 * @param $out_refund_no string 商户退款单号
 	 * @param $total_fee int 总金额（单位：分）
@@ -406,36 +349,8 @@ class WechatPay {
 	}
 
 	/**
-	 * 撤销订单 - 使用商户订单号
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_11&index=3
-	 * @param $out_trade_no string 商户订单号
-	 * @return array
-	 */
-	public function reverseByOutTradeNo($out_trade_no){
-		$data = array();
-		$data["appid"] = $this->config["app_id"];
-		$data["out_trade_no"] = $out_trade_no;
-		$result = $this->post(self::URL_REVERSE, $data,true);
-		return $result;
-	}
-
-	/**
-	 * 撤销订单 - 使用微信订单号
-	 * @ref  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_11&index=3
-	 * @param $transaction_id string 微信订单号
-	 * @return array
-	 */
-	public function reverseByTransactionId($transaction_id){
-		$data = array();
-		$data["appid"] = $this->config["app_id"];
-		$data["transaction_id"] = $transaction_id;
-		$result = $this->post(self::URL_REVERSE, $data,true);
-		return $result;
-	}
-
-	/**
 	 * 下载对账单
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_6
+	 * @link https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_6
 	 * @param $bill_date string 下载对账单的日期，格式：20140603
 	 * @param $bill_type string 类型 ALL|SUCCESS
 	 * @return array
@@ -451,7 +366,7 @@ class WechatPay {
 
 	/**
 	 * 下载资金账单
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_18&index=7
+	 * @link https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_18&index=7
 	 * @param $bill_date string 资金账单日期，格式：20140603
 	 * @param $account_type string 资金账户类型 Basic|Operation|Fees
 	 * @param $tar_type string 压缩账单
@@ -468,97 +383,8 @@ class WechatPay {
 	}
 
 	/**
-	 * 发放普通红包
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/cash_coupon.php?chapter=13_4&index=3
-	 * @param $mch_billno string 商户订单号
-	 * @param $send_name string 商户名称
-	 * @param $re_openid string 用户openid
-	 * @param $total_amount int 付款金额 单位分
-	 * @param $total_num int 红包发放总人数
-	 * @param $wishing string 红包祝福语
-	 * @param $act_name string 活动名称
-	 * @param $remark string 备注
-	 * @param $scene_id string 场景id,发放红包使用场景，红包金额大于200时必传 PRODUCT_1:商品促销 PRODUCT_2:抽奖 PRODUCT_3:虚拟物品兑奖 PRODUCT_4:企业内部福利 PRODUCT_5:渠道分润 PRODUCT_6:保险回馈 PRODUCT_7:彩票派奖 PRODUCT_8:税务刮奖
-	 * @param $riskinfo string 活动信息
-	 * @param $consume_mch_id string 资金授权商户号
-	 * @return array
-	 * @throws Exception
-	 */
-	public function sendRedPack($mch_billno,$send_name,$re_openid,$total_amount,$total_num,$wishing,$act_name,$remark,$scene_id = '',$riskinfo = '',$consume_mch_id = ''){
-		$data = array();
-		$data["wxappid"] = $this->config["app_id"];
-		$data["mch_billno"] = $mch_billno;
-		$data["send_name"] = $send_name;
-		$data["re_openid"] = $re_openid;
-		$data["total_amount"] = $total_amount;
-		if($total_amount > 20000 && trim($scene_id)=='') throw new Exception("scene_id is required when total_amount beyond 20000");
-		$data["total_num"] = $total_num;
-		$data["wishing"] = $wishing;
-		$data["act_name"] = $act_name;
-		$data["remark"] = $remark;
-		$data["scene_id"] = $scene_id;
-		$data["riskinfo"] = $riskinfo;
-		$data["consume_mch_id"] = $consume_mch_id;
-		$result = $this->post(self::URL_SENDREDPACK, $data, true); //cert is required
-		return $result;
-	}
-
-	/**
-	 * 发放裂变红包
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/cash_coupon.php?chapter=13_5&index=4
-	 * @param $mch_billno string 商户订单号
-	 * @param $send_name string 商户名称
-	 * @param $re_openid string 用户openid
-	 * @param $total_amount int 付款金额 单位分
-	 * @param $total_num int 红包发放总人数
-	 * @param $wishing string 红包祝福语
-	 * @param $act_name string 活动名称
-	 * @param $remark string 备注
-	 * @param $scene_id string 场景id,发放红包使用场景，红包金额大于200时必传 PRODUCT_1:商品促销 PRODUCT_2:抽奖 PRODUCT_3:虚拟物品兑奖 PRODUCT_4:企业内部福利 PRODUCT_5:渠道分润 PRODUCT_6:保险回馈 PRODUCT_7:彩票派奖 PRODUCT_8:税务刮奖
-	 * @param $riskinfo string 活动信息
-	 * @param $consume_mch_id string 资金授权商户号
-	 * @return array
-	 * @throws Exception
-	 */
-	public function sendGroupRedPack($mch_billno,$send_name,$re_openid,$total_amount,$total_num,$wishing,$act_name,$remark,$scene_id = '',$riskinfo = '',$consume_mch_id = ''){
-		$data = array();
-		$data["wxappid"] = $this->config["app_id"];//NOTE: WXappid
-		$data["mch_billno"] = $mch_billno;
-		$data["send_name"] = $send_name;
-		$data["re_openid"] = $re_openid;
-		$data["total_amount"] = $total_amount;
-		if($total_amount > 20000 && trim($scene_id)=='') throw new Exception("scene_id is required when total_amount beyond 20000(200rmb)");
-		$data["total_num"] = $total_num;
-		$data["amt_type"] = 'ALL_RAND'; //红包金额设置方式 ALL_RAND—全部随机
-		$data["wishing"] = $wishing;
-		$data["act_name"] = $act_name;
-		$data["remark"] = $remark;
-		$data["scene_id"] = $scene_id;
-		$data["riskinfo"] = $riskinfo;
-		$data["consume_mch_id"] = $consume_mch_id;
-		$result = $this->post(self::URL_SENDGROUPREDPACK, $data, true); //cert is required
-		return $result;
-	}
-
-	/**
-	 * 查询红包记录
-	 * @param $mch_billno string 商户订单号
-	 * @return array
-	 * @throws Exception
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/cash_coupon.php?chapter=13_6&index=5
-	 */
-	public function getHbInfo($mch_billno){
-		$data = array();
-		$data["mch_billno"] = $mch_billno;
-		$data["appid"] = $this->config["app_id"];
-		$data["bill_type"] = 'MCHT'; //MCHT:通过商户订单号获取红包信息。
-		$result = $this->post(self::URL_GETHBINFO, $data, true); //cert is required
-		return $result;
-	}
-
-	/**
 	 * 拉取订单评价数据
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_17&index=11
+	 * @link https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_17&index=11
 	 * @param string $begin_time 开始时间,格式为yyyyMMddHHmmss
 	 * @param string $end_time 结束时间,格式为yyyyMMddHHmmss
 	 * @param int $offset 偏移
@@ -574,56 +400,6 @@ class WechatPay {
 		$data["limit"] = $limit;
 		$data["sign"] = $this->sign($data,WechatPay::SIGNTYPE_HMACSHA256);
 		$result = $this->post(self::URL_BATCHQUERYCOMMENT, $data, true); //cert is required
-		return $result;
-	}
-
-	/**
-	 * 获取支付参数(JSAPI - 公众号/小程序支付 , APP - APP支付)
-	 * @param $prepay_id string 预支付ID
-	 * @param $trade_type string 支付类型
-	 * @return array
-	 */
-	public function getPackage($prepay_id, $trade_type = WechatPay::TRADETYPE_JSAPI) {
-		$data = array();
-		if ($trade_type == WechatPay::TRADETYPE_JSAPI){
-			$data["package"]   = "prepay_id=$prepay_id";
-			$data["timeStamp"] = time();
-			$data["nonceStr"]  = $this->getNonceStr();
-			$data["appId"] = $this->config["app_id"];
-			$data["signType"]  = "MD5";
-			$data["paySign"]   = $this->sign($data);
-		} else if ($trade_type == WechatPay::TRADETYPE_APP){
-			$data["package"]   = "Sign=WXPay";
-			$data['prepayid'] = $prepay_id;
-			$data['partnerid'] = $this->config["mch_id"];
-			$data["timestamp"] = time();
-			$data["noncestr"]  = $this->getNonceStr();
-			$data["appid"] = $this->config["app_id"];
-			$data["sign"]   = $this->sign($data);
-		}
-		return $data;
-	}
-
-	/**
-	 * 提交刷卡支付
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_10&index=1
-	 * @param $body
-	 * @param $out_trade_no
-	 * @param $total_fee
-	 * @param $spbill_create_ip
-	 * @param $auth_code
-	 * @param array $ext
-	 * @return array
-	 */
-	public function microPay($body,$out_trade_no,$total_fee,$spbill_create_ip,$auth_code,$ext = array()){
-		$data = (!empty($ext) && is_array($ext))?$ext:array();
-		$data["appid"] = $this->config["app_id"];
-		$data["body"]         = $body;
-		$data["out_trade_no"] = $out_trade_no;
-		$data["total_fee"]    = $total_fee;
-		$data["spbill_create_ip"] = $spbill_create_ip;
-		$data["auth_code"] = $auth_code;
-		$result = $this->post(self::URL_MICROPAY,$data,false);
 		return $result;
 	}
 
@@ -691,7 +467,7 @@ class WechatPay {
 
 	/**
 	 * 交易保障
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/H5.php?chapter=9_8&index=8
+	 * @link https://pay.weixin.qq.com/wiki/doc/api/H5.php?chapter=9_8&index=8
 	 * @param string $interface_url
 	 * @param string $execution_time
 	 * @param string $return_code
@@ -725,7 +501,7 @@ class WechatPay {
 
 	/**
 	 * 转换短链接
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_9&index=8
+	 * @link https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_9&index=8
 	 * @param $longurl
 	 * @return string
 	 */
@@ -735,202 +511,6 @@ class WechatPay {
 		$data["long_url"] = $longurl;
 		$result = $this->post(self::URL_SHORTURL,$data,false);
 		return $result['short_url'];
-	}
-
-	/**
-	 * 授权码查询openid
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_13&index=10
-	 * @param $auth_code
-	 * @return mixed
-	 */
-	public function authCodeToOpenId($auth_code){
-		$data = array();
-		$data["appid"] = $this->config["app_id"];
-		$data["auth_code"] = $auth_code;
-		$result = $this->post(self::URL_AUTHCODETOOPENID,$data,false);
-		return $result['openid'];
-	}
-
-	/**
-	 * 企业付款到零钱
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=14_2
-	 * @param $partner_trade_no
-	 * @param $openid
-	 * @param $amount
-	 * @param $desc
-	 * @param $spbill_create_ip
-	 * @param $check_name
-	 * @param $re_user_name
-	 * @return array
-	 * @throws Exception
-	 */
-	public function transferWallet($partner_trade_no,$openid,$amount,$desc,$spbill_create_ip = null,$re_user_name = null,$check_name = WechatPay::CHECKNAME_FORCECHECK){
-		$data = array();
-		if($check_name == WechatPay::CHECKNAME_FORCECHECK && !$re_user_name) throw new Exception('Real name is required');
-		$data["mch_appid"] = $this->config["app_id"];
-		$data["mchid"] = $this->config["mch_id"];
-		$data["partner_trade_no"] = $partner_trade_no;
-		$data["openid"] = $openid;
-		$data["amount"] = $amount;
-		$data["desc"] = $desc;
-		$data['spbill_create_ip'] = $spbill_create_ip?:$_SERVER['SERVER_ADDR'];
-		$data["check_name"] = $check_name;
-		$data["re_user_name"] = $re_user_name;
-		$result = $this->post(self::URL_TRANSFER_WALLET,$data,true);
-		return $result;
-	}
-
-	/**
-	 * 查询企业付款
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=14_3
-	 * @param $partner_trade_no
-	 * @return array
-	 */
-	public function queryTransferWallet($partner_trade_no){
-		$data = array();
-		$data["appid"] = $this->config["app_id"];
-		$data["mch_id"] = $this->config["mch_id"];
-		$data["partner_trade_no"] = $partner_trade_no;
-		$result = $this->post(self::URL_QUERY_TRANSFER_WALLET,$data,true);
-		return $result;
-	}
-
-	/**
-	 * 企业付款到银行卡
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=24_2
-	 * @param $partner_trade_no
-	 * @param $bank_no
-	 * @param $true_name
-	 * @param $bank_code
-	 * @param $amount
-	 * @param $desc
-	 * @return array
-	 * @throws Exception
-	 */
-	public function transferBankCard($partner_trade_no,$bank_no,$true_name,$bank_code,$amount,$desc){
-		if(!in_array($bank_code,array_values(self::$BANKCODE))) throw new Exception("Unsupported bank code: $bank_code");
-		$data = array();
-		$data["partner_trade_no"] = $partner_trade_no;
-		$enc_bank_no = $this->rsaEncrypt($bank_no);
-		$data["enc_bank_no"] = $enc_bank_no;
-		$enc_true_name = $this->rsaEncrypt($true_name);
-		$data["enc_true_name"] = $enc_true_name;
-		$data["bank_code"] = $bank_code;
-		$data["desc"] = $desc;
-		$data["amount"] = $amount;
-		$result = $this->post(self::URL_TRANSFER_BANKCARD,$data,true);
-		return $result;
-	}
-
-	/**
-	 * 查询企业付款银行卡
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=24_3
-	 * @param $partner_trade_no
-	 * @return array
-	 */
-	public function queryTransferBankCard($partner_trade_no){
-		$data = array();
-		$data["appid"] = $this->config["app_id"];
-		$data["mch_id"] = $this->config["mch_id"];
-		$data["partner_trade_no"] = $partner_trade_no;
-		$result = $this->post(self::URL_QUERY_TRANSFER_WALLET,$data,true);
-		return $result;
-	}
-
-	/**
-	 * 发放代金券
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/sp_coupon.php?chapter=12_3&index=4
-	 * @param $coupon_stock_id
-	 * @param $open_id
-	 * @param $partner_trade_no
-	 * @param string $op_user_id
-	 * @param array $ext
-	 * @return array
-	 */
-	public function sendCoupon($coupon_stock_id,$open_id,$partner_trade_no,$op_user_id = '',$ext = array()){
-		$data = (!empty($ext) && is_array($ext))?$ext:array();
-		$data["partner_trade_no"] = $partner_trade_no;
-		$data["coupon_stock_id"] = $coupon_stock_id;
-		$data["openid_count"] = 1;
-		$data["open_id"] = $open_id;
-		$data["op_user_id"] = $op_user_id;
-		$result = $this->post(self::URL_SEND_COUPON,$data,true);
-		return $result;
-	}
-
-	/**
-	 * 查询代金券批次
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/sp_coupon.php?chapter=12_4&index=5
-	 * @param $coupon_stock_id
-	 * @param string $op_user_id
-	 * @return array
-	 */
-	public function queryCouponStock($coupon_stock_id,$op_user_id = ''){
-		$data = array();
-		$data["coupon_stock_id"] = $coupon_stock_id;
-		$data["op_user_id"] = $op_user_id;
-		$result = $this->post(self::URL_QUERY_COUPON_STOCK,$data,false);
-		return $result;
-	}
-
-	/**
-	 * 查询代金券信息
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/sp_coupon.php?chapter=12_5&index=6
-	 * @param $coupon_id
-	 * @param $open_id
-	 * @param $stock_id
-	 * @param string $op_user_id
-	 * @param array $ext
-	 * @return array
-	 */
-	public function queryCouponsInfo($coupon_id,$open_id,$stock_id,$op_user_id = '',$ext = array()){
-		$data = (!empty($ext) && is_array($ext))?$ext:array();
-		$data["coupon_id"] = $coupon_id;
-		$data["stock_id"] = $stock_id;
-		$data["open_id"] = $open_id;
-		$data["op_user_id"] = $op_user_id;
-		$result = $this->post(self::URL_QUERY_COUPON_INFO,$data,false);
-		return $result;
-	}
-
-	/**
-	 * 获取RSA加密公钥
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=24_7&index=4
-	 * @param bool $refresh
-	 * @return string
-	 * @throws Exception
-	 */
-	public function getPublicKey($refresh = false){
-		if(!$this->publicKey) {
-			if (!$refresh && file_exists($this->config["rsa_pubkey_path"])) {
-				$this->publicKey = file_get_contents($this->config["rsa_pubkey_path"]);
-			}else{
-				$data = array();
-				$data["mch_id"] = $this->config["mch_id"];
-				$data["sign_type"] = $this->config["sign_type"];
-				$result = $this->post(self::URL_GETPUBLICKEY, $data, true);
-				$pubkey = $result['pub_key'];
-				$this->publicKey = $this->convertPKCS1toPKCS8($pubkey);
-				if($fp = @fopen($this->config["rsa_pubkey_path"], "w")) {
-					fwrite($fp, $this->publicKey);
-					fclose($fp);
-				}
-			}
-		}
-		return $this->publicKey;
-	}
-
-	public function setPublicKey($publicKey){
-		$this->publicKey = $publicKey;
-	}
-
-	private function convertPKCS1toPKCS8($pkcs1){
-		$start_key = $pkcs1;
-		$start_key = str_replace('-----BEGIN RSA PUBLIC KEY-----', '', $start_key);
-		$start_key = trim(str_replace('-----END RSA PUBLIC KEY-----', '', $start_key));
-		$key = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A' . str_replace("\n", '', $start_key);
-		$key = "-----BEGIN PUBLIC KEY-----\n" . wordwrap($key, 64, "\n", true) . "\n-----END PUBLIC KEY-----";
-		return $key;
 	}
 
 	public function rsaEncrypt($data,$pubkey = null){
@@ -946,7 +526,7 @@ class WechatPay {
 
 	/**
 	 * sandbox环境获取验签秘钥
-	 * @ref https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=23_1
+	 * @link https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=23_1
 	 * @return array
 	 */
 	public function getSignKey(){
@@ -1004,7 +584,7 @@ class WechatPay {
 		return $ticket;
 	}
 
-	private function post($url, $data,$cert = true) {
+	protected function post($url, $data,$cert = true) {
 		if(!isset($data['mch_id']) && !isset($data['mchid'])) $data["mch_id"] = $this->config["mch_id"];
 		if(!isset($data['nonce_str'])) $data["nonce_str"] = $this->getNonceStr();
 		if(!isset($data['sign'])) $data['sign'] = $this->sign($data);
@@ -1104,7 +684,7 @@ class WechatPay {
 		return $array;
 	}
 
-	private function getNonceStr() {
+	protected function getNonceStr() {
 		return substr(str_shuffle("abcdefghijklmnopqrstuvwxyz0123456789"),0,32);
 	}
 

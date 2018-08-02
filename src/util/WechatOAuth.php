@@ -5,7 +5,7 @@
  * @license MIT
  * @author zhangv
  */
-namespace zhangv\wechat;
+namespace zhangv\wechat\pay\util;
 
 class WechatOAuth {
 	const TICKETTYPE_JSAPI = 'jsapi',TICKETTYPE_WXCARD = 'wx_card';

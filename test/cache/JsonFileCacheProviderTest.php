@@ -1,10 +1,6 @@
 <?php
-/**
- * User: derekzhangv
- * Time: 2018/6/23 21:42
- */
 
-use zhangv\wechat\cache\JsonFileCacheProvider;
+use zhangv\wechat\pay\cache\JsonFileCacheProvider;
 use PHPUnit\Framework\TestCase;
 
 class JsonFileCacheProviderTest extends TestCase {

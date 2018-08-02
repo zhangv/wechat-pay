@@ -3,7 +3,7 @@
 //公众号支付
 require_once __DIR__ . "/autoload.php";
 
-use zhangv\wechat\WechatPay;
+use zhangv\wechat\pay\WechatPay;
 $cfg = include './config.php';
 
 if(empty( $_REQUEST['openid'])) {
@@ -12,7 +12,7 @@ if(empty( $_REQUEST['openid'])) {
 	exit;
 }
 
-$payment = new WechatPay($cfg);
+$payment = WechatPay::Jsapi($cfg);
 $openid = $_REQUEST['openid'];
 $stamp = date('YmdHis');
 $ext = ['attach'=>''];
