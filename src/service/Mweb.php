@@ -1,7 +1,7 @@
 <?php
 namespace zhangv\wechat\pay\service;
 use \zhangv\wechat\pay\WechatPay;
-
+use \Exception;
 /**
  * H5支付
  * @license MIT

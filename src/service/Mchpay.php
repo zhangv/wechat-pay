@@ -83,6 +83,17 @@ class Mchpay extends WechatPay {
 		return $result;
 	}
 
+	public function rsaEncrypt($data,$pubkey = null){
+		if(!$pubkey) $pubkey = $this->getPublicKey();
+		$encrypted = null;
+		$pubkey = openssl_get_publickey($pubkey);
+		if (@openssl_public_encrypt($data, $encrypted, $pubkey,OPENSSL_PKCS1_OAEP_PADDING))
+			$data = base64_encode($encrypted);
+		else
+			throw new Exception('Unable to encrypt data');
+		return $data;
+	}
+
 	/**
 	 * 查询企业付款银行卡
 	 * @link https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=24_3

@@ -124,12 +124,12 @@ class WechatPay {
 
 	/**
 	 * @param string $name
-	 * @param array  $arguments
+	 * @param array  $config
 	 *
 	 * @return mixed
 	 */
-	public static function __callStatic($name, $arguments) {
-		return self::load($name, ...$arguments);
+	public static function __callStatic($name, $config) {
+		return self::load($name, $config);
 	}
 
 	public function setWechatOAuth($wechatOAuth){
@@ -511,17 +511,6 @@ class WechatPay {
 		$data["long_url"] = $longurl;
 		$result = $this->post(self::URL_SHORTURL,$data,false);
 		return $result['short_url'];
-	}
-
-	public function rsaEncrypt($data,$pubkey = null){
-		if(!$pubkey) $pubkey = $this->getPublicKey();
-		$encrypted = null;
-		$pubkey = openssl_get_publickey($pubkey);
-		if (@openssl_public_encrypt($data, $encrypted, $pubkey,OPENSSL_PKCS1_OAEP_PADDING))
-			$data = base64_encode($encrypted);
-		else
-			throw new Exception('Unable to encrypt data');
-		return $data;
 	}
 
 	/**
