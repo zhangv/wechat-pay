@@ -14,7 +14,6 @@ class Mchpay extends WechatPay {
 
 	/**
 	 * 企业付款到零钱
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=14_2
 	 * @param $partner_trade_no
 	 * @param $openid
 	 * @param $amount
@@ -26,39 +25,37 @@ class Mchpay extends WechatPay {
 	 * @throws Exception
 	 */
 	public function transferWallet($partner_trade_no,$openid,$amount,$desc,$spbill_create_ip = null,$re_user_name = null,$check_name = WechatPay::CHECKNAME_FORCECHECK){
-		$data = array();
 		if($check_name == WechatPay::CHECKNAME_FORCECHECK && !$re_user_name) throw new Exception('Real name is required');
-		$data["mch_appid"] = $this->config["app_id"];
-		$data["mchid"] = $this->config["mch_id"];
-		$data["partner_trade_no"] = $partner_trade_no;
-		$data["openid"] = $openid;
-		$data["amount"] = $amount;
-		$data["desc"] = $desc;
-		$data['spbill_create_ip'] = $spbill_create_ip?:$_SERVER['SERVER_ADDR'];
-		$data["check_name"] = $check_name;
-		$data["re_user_name"] = $re_user_name;
-		$result = $this->post(self::URL_TRANSFER_WALLET,$data,true);
-		return $result;
+		$data = [
+			"mch_appid" => $this->config["app_id"],
+			"mchid" => $this->config["mch_id"],
+			"partner_trade_no" => $partner_trade_no,
+			"openid" => $openid,
+			"amount" => $amount,
+			"desc" => $desc,
+			'spbill_create_ip' => $spbill_create_ip?:$_SERVER['SERVER_ADDR'],
+			"check_name" => $check_name,
+			"re_user_name" => $re_user_name
+		];
+		return $this->post(self::URL_TRANSFER_WALLET,$data,true);
 	}
 
 	/**
 	 * 查询企业付款
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=14_3
 	 * @param $partner_trade_no
 	 * @return array
 	 */
 	public function queryTransferWallet($partner_trade_no){
-		$data = array();
-		$data["appid"] = $this->config["app_id"];
-		$data["mch_id"] = $this->config["mch_id"];
-		$data["partner_trade_no"] = $partner_trade_no;
-		$result = $this->post(self::URL_QUERY_TRANSFER_WALLET,$data,true);
-		return $result;
+		$data = [
+			"appid" => $this->config["app_id"],
+			"mch_id" => $this->config["mch_id"],
+			"partner_trade_no" => $partner_trade_no
+		];
+		return $this->post(self::URL_QUERY_TRANSFER_WALLET,$data,true);
 	}
 
 	/**
 	 * 企业付款到银行卡
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=24_2
 	 * @param $partner_trade_no
 	 * @param $bank_no
 	 * @param $true_name
@@ -70,17 +67,15 @@ class Mchpay extends WechatPay {
 	 */
 	public function transferBankCard($partner_trade_no,$bank_no,$true_name,$bank_code,$amount,$desc){
 		if(!in_array($bank_code,array_values(self::$BANKCODE))) throw new Exception("Unsupported bank code: $bank_code");
-		$data = array();
-		$data["partner_trade_no"] = $partner_trade_no;
-		$enc_bank_no = $this->rsaEncrypt($bank_no);
-		$data["enc_bank_no"] = $enc_bank_no;
-		$enc_true_name = $this->rsaEncrypt($true_name);
-		$data["enc_true_name"] = $enc_true_name;
-		$data["bank_code"] = $bank_code;
-		$data["desc"] = $desc;
-		$data["amount"] = $amount;
-		$result = $this->post(self::URL_TRANSFER_BANKCARD,$data,true);
-		return $result;
+		$data = [
+			"partner_trade_no" => $partner_trade_no,
+			"enc_bank_no" => $this->rsaEncrypt($bank_no),
+			"enc_true_name" => $this->rsaEncrypt($true_name),
+			"bank_code" => $bank_code,
+			"desc" => $desc,
+			"amount" => $amount
+		];
+		return $this->post(self::URL_TRANSFER_BANKCARD,$data,true);
 	}
 
 	public function rsaEncrypt($data,$pubkey = null){
@@ -96,17 +91,16 @@ class Mchpay extends WechatPay {
 
 	/**
 	 * 查询企业付款银行卡
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=24_3
 	 * @param $partner_trade_no
 	 * @return array
 	 */
 	public function queryTransferBankCard($partner_trade_no){
-		$data = array();
-		$data["appid"] = $this->config["app_id"];
-		$data["mch_id"] = $this->config["mch_id"];
-		$data["partner_trade_no"] = $partner_trade_no;
-		$result = $this->post(self::URL_QUERY_TRANSFER_WALLET,$data,true);
-		return $result;
+		$data = [
+			"appid" => $this->config["app_id"],
+			"mch_id" => $this->config["mch_id"],
+			"partner_trade_no" => $partner_trade_no
+		];
+		return $this->post(self::URL_QUERY_TRANSFER_WALLET,$data,true);
 	}
 
 	/**

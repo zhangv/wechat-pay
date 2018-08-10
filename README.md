@@ -23,7 +23,7 @@ in composer.json
 
 ### Demo
 
-获得JSAPI的支付参数
+获取JSAPI的支付参数（公众号、小程序支付）
 ```php
 $payment = WechatPay::Jsapi($cfg);
 $prepayId = $payment->getPrepayId($body, $orderNo, $amt, $openid);
@@ -31,7 +31,7 @@ $package = $payment->getPackage($prepayId);
 
 ```
 
-获得APP的支付参数
+获取APP的支付参数
 ```php
 $payment = WechatPay::App($cfg);
 $prepayId = $payment->getPrepayId($body, $orderNo, $amt, $openid);
@@ -48,11 +48,24 @@ $url = $payment->getMwebUrl($body,$orderNo,$amt);
 
 获取扫码支付URL
 ```php
-$payment = WechatPay::Mweb($cfg);
+$payment = WechatPay::Native($cfg);
 $url = $payment->getCodeUrl($body,$out_trade_no,$total_fee,$product_id);
 
 ```
 
+获取扫码支付URL
+```php
+$payment = WechatPay::Native($cfg);
+$url = $payment->getCodeUrl($body,$out_trade_no,$total_fee,$product_id);
+
+```
+
+提交支付授权码
+```php
+$payment = WechatPay::Micro($cfg);
+$url = $payment->microPay($body,$out_trade_no,$total_fee,$spbill_create_ip,$auth_code);
+
+```
 退款
 ```php
 $payment = new WechatPay($cfg);
