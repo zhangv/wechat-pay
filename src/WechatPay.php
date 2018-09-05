@@ -165,7 +165,6 @@ class WechatPay {
 
 	/**
 	 * 统一下单接口
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
 	 * @param array $params
 	 * @throws Exception
 	 * @return array
@@ -200,9 +199,9 @@ class WechatPay {
 
 	/**
 	 * 查询订单（根据微信订单号）
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_2
 	 * @param $transaction_id string 微信订单号
 	 * @return array
+	 * @throws Exception
 	 */
 	public function queryOrderByTransactionId($transaction_id){
 		$data = array();
@@ -214,106 +213,99 @@ class WechatPay {
 
 	/**
 	 * 查询订单（根据商户订单号）
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_2
 	 * @param $out_trade_no string 商户订单号
 	 * @return array
+	 * @throws Exception
 	 */
 	public function queryOrderByOutTradeNo($out_trade_no){
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["out_trade_no"] = $out_trade_no;
-		$result = $this->post(self::URL_ORDERQUERY, $data);
-		return $result;
+		return $this->post(self::URL_ORDERQUERY, $data);
 	}
 
 	/**
 	 * 查询退款（根据微信订单号）
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
 	 * @param $transaction_id string 微信交易号
 	 * @param $offset int 偏移
 	 * @return array
+	 * @throws Exception
 	 */
 	public function queryRefundByTransactionId($transaction_id,$offset = 0){
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["transaction_id"] = $transaction_id;
 		$data["offset"] = $offset;
-		$result = $this->post(self::URL_REFUNDQUERY, $data);
-		return $result;
+		return $this->post(self::URL_REFUNDQUERY, $data);
 	}
 
 	/**
 	 * 查询退款（根据商户订单号）
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
 	 * @param $out_trade_no string 商户交易号
 	 * @param $offset int 偏移
 	 * @return array
+	 * @throws Exception
 	 */
 	public function queryRefundByOutTradeNo($out_trade_no,$offset = 0){
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["out_trade_no"] = $out_trade_no;
 		$data["offset"] = $offset;
-		$result = $this->post(self::URL_REFUNDQUERY, $data);
-		return $result;
+		return $this->post(self::URL_REFUNDQUERY, $data);
 	}
 
 	/**
 	 * 查询退款（根据微信退款单号）
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
 	 * @param $refund_id string 微信退款单号
 	 * @param $offset int 偏移
 	 * @return array
+	 * @throws Exception
 	 */
 	public function queryRefundByRefundId($refund_id,$offset = 0){
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["refund_id"] = $refund_id;
 		$data["offset"] = $offset;
-		$result = $this->post(self::URL_REFUNDQUERY, $data);
-		return $result;
+		return $this->post(self::URL_REFUNDQUERY, $data);
 	}
 
 	/**
 	 * 查询退款（根据商户退款单号）
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_5
 	 * @param $out_refund_no string 商户退款单号
 	 * @param $offset int 偏移
 	 * @return array
+	 * @throws Exception
 	 */
 	public function queryRefundByOutRefundNo($out_refund_no,$offset = 0){
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["out_refund_no"] = $out_refund_no;
 		$data["offset"] = $offset;
-		$result = $this->post(self::URL_REFUNDQUERY, $data);
-		return $result;
+		return $this->post(self::URL_REFUNDQUERY, $data);
 	}
 
 	/**
 	 * 关闭订单
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_3
 	 * @param $out_trade_no string 商户订单号
 	 * @return array
+	 * @throws Exception
 	 */
 	public function closeOrder($out_trade_no){
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["out_trade_no"] = $out_trade_no;
-		$result = $this->post(self::URL_CLOSEORDER, $data,false);
-		return $result;
+		return $this->post(self::URL_CLOSEORDER, $data,false);
 	}
 
 	/**
 	 * 退款 - 使用商户订单号
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_4
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_4
 	 * @param $out_trade_no string 商户订单号
 	 * @param $out_refund_no string 商户退款单号
 	 * @param $total_fee int 总金额（单位：分）
 	 * @param $refund_fee int 退款金额（单位：分）
 	 * @param $ext array 扩展数组
 	 * @return array
+	 * @throws Exception
 	 */
 	public function refundByOutTradeNo($out_trade_no,$out_refund_no,$total_fee,$refund_fee,$ext = array()){
 		$data = ($ext && is_array($ext))?$ext:array();
@@ -322,8 +314,7 @@ class WechatPay {
 		$data["out_refund_no"] = $out_refund_no;
 		$data["total_fee"] = $total_fee;
 		$data["refund_fee"] = $refund_fee;
-		$result = $this->post(self::URL_REFUND, $data,true);
-		return $result;
+		return $this->post(self::URL_REFUND, $data,true);
 	}
 
 	/**
@@ -334,6 +325,7 @@ class WechatPay {
 	 * @param $refund_fee int 退款金额（单位：分）
 	 * @param $ext array 扩展数组
 	 * @return array
+	 * @throws Exception
 	 */
 	public function refundByTransactionId($transaction_id,$out_refund_no,$total_fee,$refund_fee,$ext = array()){
 		$data = ($ext && is_array($ext))?$ext:array();
@@ -342,33 +334,31 @@ class WechatPay {
 		$data["out_refund_no"] = $out_refund_no;
 		$data["total_fee"] = $total_fee;
 		$data["refund_fee"] = $refund_fee;
-		$result = $this->post(self::URL_REFUND, $data,true);
-		return $result;
+		return $this->post(self::URL_REFUND, $data,true);
 	}
 
 	/**
 	 * 下载对账单
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_6
 	 * @param $bill_date string 下载对账单的日期，格式：20140603
 	 * @param $bill_type string 类型 ALL|SUCCESS
 	 * @return array
+	 * @throws Exception
 	 */
 	public function downloadBill($bill_date,$bill_type = 'ALL'){
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["bill_date"] = $bill_date;
 		$data["bill_type"] = $bill_type;
-		$result = $this->post(self::URL_DOWNLOADBILL, $data);
-		return $result;
+		return $this->post(self::URL_DOWNLOADBILL, $data);
 	}
 
 	/**
 	 * 下载资金账单
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_18&index=7
 	 * @param $bill_date string 资金账单日期，格式：20140603
 	 * @param $account_type string 资金账户类型 Basic|Operation|Fees
 	 * @param $tar_type string 压缩账单
 	 * @return array
+	 * @throws Exception
 	 */
 	public function downloadFundFlow($bill_date,$account_type = self::ACCOUNTTYPE_BASIC,$tar_type = 'GZIP'){
 		$data = array();
@@ -376,18 +366,17 @@ class WechatPay {
 		$data["bill_date"] = $bill_date;
 		$data["account_type"] = $account_type;
 		$data["tar_type"] = $tar_type;
-		$result = $this->post(self::URL_DOWNLOAD_FUND_FLOW, $data);
-		return $result;
+		return $this->post(self::URL_DOWNLOAD_FUND_FLOW, $data);
 	}
 
 	/**
 	 * 拉取订单评价数据
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_17&index=11
 	 * @param string $begin_time 开始时间,格式为yyyyMMddHHmmss
 	 * @param string $end_time 结束时间,格式为yyyyMMddHHmmss
 	 * @param int $offset 偏移
 	 * @param int $limit 条数
 	 * @return array
+	 * @throws Exception
 	 */
 	public function batchQueryComment($begin_time,$end_time,$offset = 0,$limit = 200){
 		$data = array();
@@ -397,8 +386,7 @@ class WechatPay {
 		$data["offset"] = $offset;
 		$data["limit"] = $limit;
 		$data["sign"] = $this->sign($data,WechatPay::SIGNTYPE_HMACSHA256);
-		$result = $this->post(self::URL_BATCHQUERYCOMMENT, $data, true); //cert is required
-		return $result;
+		return $this->post(self::URL_BATCHQUERYCOMMENT, $data, true); //cert is required
 	}
 
 	/**
@@ -414,6 +402,7 @@ class WechatPay {
 		if($callback && is_callable($callback)){
 			return call_user_func_array( $callback , [$notify_data] );
 		}
+		return null;
 	}
 
 	/**
@@ -429,12 +418,14 @@ class WechatPay {
 		if($callback && is_callable($callback)){
 			return call_user_func_array( $callback ,[$notify_data] );
 		}
+		return null;
 	}
 
 	/**
 	 * 验证数据签名
 	 * @param $data array 数据数组
 	 * @return boolean 数据校验结果
+	 * @throws Exception
 	 */
 	public function validateSign($data) {
 		if (!isset($data["sign"])) {
@@ -465,7 +456,6 @@ class WechatPay {
 
 	/**
 	 * 交易保障
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/H5.php?chapter=9_8&index=8
 	 * @param string $interface_url
 	 * @param string $execution_time
 	 * @param string $return_code
@@ -478,6 +468,7 @@ class WechatPay {
 	 * @param string $err_code
 	 * @param string $err_code_des
 	 * @return array
+	 * @throws Exception
 	 */
 	public function report($interface_url,$execution_time,$return_code,$result_code,$user_ip,$out_trade_no = null,$time = null,$device_info = null,
 	                       $return_msg = null,$err_code = null,$err_code_des = null){
@@ -499,9 +490,9 @@ class WechatPay {
 
 	/**
 	 * 转换短链接
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_9&index=8
 	 * @param $longurl
 	 * @return string
+	 * @throws Exception
 	 */
 	public function shortUrl($longurl){
 		$data = array();
@@ -513,8 +504,8 @@ class WechatPay {
 
 	/**
 	 * sandbox环境获取验签秘钥
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/native.php?chapter=23_1
 	 * @return array
+	 * @throws Exception
 	 */
 	public function getSignKey(){
 		$data = array();

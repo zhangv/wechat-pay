@@ -44,6 +44,7 @@ class Mchpay extends WechatPay {
 	 * 查询企业付款
 	 * @param $partner_trade_no
 	 * @return array
+	 * @throws Exception
 	 */
 	public function queryTransferWallet($partner_trade_no){
 		$data = [
@@ -93,6 +94,7 @@ class Mchpay extends WechatPay {
 	 * 查询企业付款银行卡
 	 * @param $partner_trade_no
 	 * @return array
+	 * @throws Exception
 	 */
 	public function queryTransferBankCard($partner_trade_no){
 		$data = [
@@ -105,7 +107,6 @@ class Mchpay extends WechatPay {
 
 	/**
 	 * 获取RSA加密公钥
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/tools/mch_pay.php?chapter=24_7&index=4
 	 * @param bool $refresh
 	 * @return string
 	 * @throws Exception

@@ -1,7 +1,7 @@
 <?php
 namespace zhangv\wechat\pay\service;
 use \zhangv\wechat\pay\WechatPay;
-
+use \Exception;
 /**
  * 刷卡支付
  * @license MIT
@@ -36,6 +36,7 @@ class Micro extends WechatPay {
 	 * @param $auth_code
 	 * @param array $ext
 	 * @return array
+	 * @throws Exception
 	 */
 	public function microPay($body,$out_trade_no,$total_fee,$spbill_create_ip,$auth_code,$ext = array()){
 		$data = (!empty($ext) && is_array($ext))?$ext:array();
@@ -45,50 +46,46 @@ class Micro extends WechatPay {
 		$data["total_fee"]    = $total_fee;
 		$data["spbill_create_ip"] = $spbill_create_ip;
 		$data["auth_code"] = $auth_code;
-		$result = $this->post(self::URL_MICROPAY,$data,true);
-		return $result;
+		return $this->post(self::URL_MICROPAY,$data,true);
 	}
 
 	/**
 	 * 授权码查询openid
-	 *
 	 * @param $auth_code
 	 * @return mixed
+	 * @throws Exception
 	 */
 	public function authCodeToOpenId($auth_code){
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["auth_code"] = $auth_code;
-		$result = $this->post(self::URL_AUTHCODETOOPENID,$data,false);
-		return $result['openid'];
+		return $this->post(self::URL_AUTHCODETOOPENID,$data,false);
 	}
 
 
 	/**
 	 * 撤销订单 - 使用商户订单号
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_11&index=3
 	 * @param $out_trade_no string 商户订单号
 	 * @return array
+	 * @throws Exception
 	 */
 	public function reverseByOutTradeNo($out_trade_no){
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["out_trade_no"] = $out_trade_no;
-		$result = $this->post(self::URL_REVERSE, $data,true);
-		return $result;
+		return $this->post(self::URL_REVERSE, $data,true);
 	}
 
 	/**
 	 * 撤销订单 - 使用微信订单号
-	 * @link  https://pay.weixin.qq.com/wiki/doc/api/micropay.php?chapter=9_11&index=3
 	 * @param $transaction_id string 微信订单号
 	 * @return array
+	 * @throws Exception
 	 */
 	public function reverseByTransactionId($transaction_id){
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["transaction_id"] = $transaction_id;
-		$result = $this->post(self::URL_REVERSE, $data,true);
-		return $result;
+		return $this->post(self::URL_REVERSE, $data,true);
 	}
 }

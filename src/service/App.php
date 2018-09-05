@@ -1,7 +1,7 @@
 <?php
 namespace zhangv\wechat\pay\service;
 use \zhangv\wechat\pay\WechatPay;
-
+use \Exception;
 /**
  * APP支付
  * @license MIT
@@ -35,6 +35,7 @@ class App extends WechatPay {
 	 * @param $spbill_create_ip string 终端ID
 	 * @param $ext array
 	 * @return string
+	 * @throws Exception
 	 */
 	public function getPrepayId($body,$out_trade_no,$total_fee,$spbill_create_ip,$ext = null) {
 		$data = ($ext && is_array($ext))?$ext:array();
@@ -51,8 +52,8 @@ class App extends WechatPay {
 	/**
 	 * 获取支付参数
 	 * @param $prepay_id string 预支付ID
-	 * @param $trade_type string 支付类型
 	 * @return array
+	 * @throws Exception
 	 */
 	public function getPackage($prepay_id) {
 		$data = array();

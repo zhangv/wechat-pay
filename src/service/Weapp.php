@@ -57,6 +57,7 @@ class Weapp extends WechatPay {
 	 * @param $prepay_id string 预支付ID
 	 * @param $trade_type string 支付类型
 	 * @return array
+	 * @throws Exception
 	 */
 	public function getPackage($prepay_id) {
 		$data = array();

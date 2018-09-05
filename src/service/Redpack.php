@@ -14,7 +14,6 @@ class Redpack extends WechatPay {
 
 	/**
 	 * 发放普通红包
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/tools/cash_coupon.php?chapter=13_4&index=3
 	 * @param $mch_billno string 商户订单号
 	 * @param $send_name string 商户名称
 	 * @param $re_openid string 用户openid
@@ -44,13 +43,11 @@ class Redpack extends WechatPay {
 		$data["scene_id"] = $scene_id;
 		$data["riskinfo"] = $riskinfo;
 		$data["consume_mch_id"] = $consume_mch_id;
-		$result = $this->post(self::URL_SENDREDPACK, $data, true); //cert is required
-		return $result;
+		return$this->post(self::URL_SENDREDPACK, $data, true);
 	}
 
 	/**
 	 * 发放裂变红包
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/tools/cash_coupon.php?chapter=13_5&index=4
 	 * @param $mch_billno string 商户订单号
 	 * @param $send_name string 商户名称
 	 * @param $re_openid string 用户openid
@@ -81,8 +78,7 @@ class Redpack extends WechatPay {
 		$data["scene_id"] = $scene_id;
 		$data["riskinfo"] = $riskinfo;
 		$data["consume_mch_id"] = $consume_mch_id;
-		$result = $this->post(self::URL_SENDGROUPREDPACK, $data, true); //cert is required
-		return $result;
+		return $this->post(self::URL_SENDGROUPREDPACK, $data, true);
 	}
 
 	/**
@@ -90,15 +86,13 @@ class Redpack extends WechatPay {
 	 * @param $mch_billno string 商户订单号
 	 * @return array
 	 * @throws Exception
-	 * @link https://pay.weixin.qq.com/wiki/doc/api/tools/cash_coupon.php?chapter=13_6&index=5
 	 */
 	public function getHbInfo($mch_billno){
 		$data = array();
 		$data["mch_billno"] = $mch_billno;
 		$data["appid"] = $this->config["app_id"];
 		$data["bill_type"] = 'MCHT'; //MCHT:通过商户订单号获取红包信息。
-		$result = $this->post(self::URL_GETHBINFO, $data, true); //cert is required
-		return $result;
+		return $this->post(self::URL_GETHBINFO, $data, true);
 	}
 
 }
