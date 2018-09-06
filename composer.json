@@ -17,6 +17,7 @@
     "issues": "https://github.com/zhangv/wechat-pay/issues"
   },
   "require": {
+    "php": ">=7.0",
     "ext-json": "*",
     "ext-curl": "*",
     "ext-SimpleXML": "*",
