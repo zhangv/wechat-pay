@@ -32,8 +32,7 @@
     "phing/phing": "2.*",
     "phploc/phploc": "^4.0",
     "pdepend/pdepend" : "2.5.2",
-    "sebastian/phpcpd": "^3.0",
-    "codedungeon/phpunit-result-printer": "^0.19.6"
+    "sebastian/phpcpd": "^3.0"
   },
   "autoload": {
     "psr-4": {
