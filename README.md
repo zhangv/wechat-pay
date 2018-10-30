@@ -10,6 +10,7 @@
 
 ### Feature
 * 使用简单
+* 支持php-7.0
 * 不依赖第三方库（但依赖json、simpleXML、openssl、curl扩展）
 * 100%测试覆盖
 * 支持所有付款方式（公众号、APP、小程序、H5、扫码、刷卡）

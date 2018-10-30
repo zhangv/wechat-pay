@@ -79,7 +79,7 @@ class MicroTest extends TestCase {
 		</xml>");
 		$this->wechatPay->setHttpClient($this->httpClient);
 		$result = $this->wechatPay->authCodeToOpenId(1);
-		$this->assertEquals('000',$result);
+		$this->assertEquals('000',$result['openid']);
 	}
 
 
