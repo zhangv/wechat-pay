@@ -69,8 +69,6 @@ class WechatPayMockTest extends TestCase{
 	}
 	/**
 	 * @test
-	 * @expectedException Exception
-	 * @expectedExceptionMessage 此交易订单号不存在
 	 */
 	public function queryOrder_notexist(){
 		$this->httpClient->method('post')->willReturn(
@@ -86,7 +84,8 @@ class WechatPayMockTest extends TestCase{
 			   <err_code><![CDATA[ORDERNOTEXIST]]></err_code>
 			</xml>");
 		$this->wechatPay->setHttpClient($this->httpClient);
-		$this->wechatPay->queryOrderByTransactionId(1);
+		$r = $this->wechatPay->queryOrderByTransactionId(1);
+		$this->assertEquals('此交易订单号不存在',$r['err_code_des']);
 	}
 
 	/** @test */
@@ -333,17 +332,16 @@ class WechatPayMockTest extends TestCase{
 	/**
 	 * 应用错误
 	 * @test
-	 * @expectedException Exception
-	 * @expectedExceptionMessage 商户无此接口权限
 	 */
 	public function applicationErr(){
 		$this->httpClient->method('post')->willReturn(
 			"<xml><return_code>SUCCESS</return_code><return_msg>OK</return_msg><result_code>FAIL</result_code>
 			<err_code>NOAUTH</err_code><err_code_des>商户无此接口权限</err_code_des></xml>");
 		$this->wechatPay->setHttpClient($this->httpClient);
-		$this->wechatPay->unifiedOrder([
+		$r = $this->wechatPay->unifiedOrder([
 			'body' => 'a','total_fee' => 1, 'openid'=>'a', 'trade_type' => WechatPay::TRADETYPE_JSAPI , 'spbill_create_ip' => '127.0.0.1'
 		]);
+		$this->assertEquals('商户无此接口权限',$r['err_code_des']);
 	}
 
 	/**

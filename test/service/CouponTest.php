@@ -61,8 +61,6 @@ class CouponTest extends TestCase {
 
 	/**
 	 * @test
-	 * @expectedException Exception
-	 * @expectedExceptionMessage 你已领取过该代金券
 	 */
 	public function sendCoupon_fail(){
 		$this->httpClient->method('post')->willReturn(

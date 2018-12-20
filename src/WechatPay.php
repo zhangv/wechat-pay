@@ -613,14 +613,14 @@ class WechatPay {
 		$this->returnMsg = isset($result['return_msg'])?$result['return_msg']:'';
 
 		if ($this->returnCode == "SUCCESS") {
-			if(isset($result['result_code']) && $result['result_code'] == "FAIL"){
+			if(isset($result['result_code']) && $result['result_code'] == "FAIL") {
 				$this->resultCode = $result['result_code'];
 				$this->errCode = $result['err_code'];
 				$this->errCodeDes = $result['err_code_des'];
-				throw new Exception("[$this->errCode]$this->errCodeDes");
-			}else{
-				return $result;
+				//应该在外部进行业务处理，这里可能会返回正在支付中的状态
+				//throw new Exception("[$this->errCode]$this->errCodeDes, with request XML: {$this->requestXML}");
 			}
+			return $result;
 		} else if($this->returnCode == 'FAIL'){
 			throw new Exception($this->returnMsg);
 		}
