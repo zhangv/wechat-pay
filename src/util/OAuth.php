@@ -1,13 +1,13 @@
 <?php
 /**
- * WechatOAuth
+ * OAuth
  *
  * @license MIT
  * @author zhangv
  */
 namespace zhangv\wechat\pay\util;
 
-class WechatOAuth {
+class OAuth {
 	const TICKETTYPE_JSAPI = 'jsapi',TICKETTYPE_WXCARD = 'wx_card';
 	public $responseJSON = null;
 	public $errCode = null;
@@ -65,7 +65,7 @@ class WechatOAuth {
 		return $this->accessToken;
 	}
 
-	public function getTicket($type = WechatOAuth::TICKETTYPE_JSAPI, $accessToken = null){
+	public function getTicket($type = OAuth::TICKETTYPE_JSAPI, $accessToken = null){
 		if(!$accessToken) $accessToken = $this->getAccessToken();
 		// $url = "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=$accessToken";
 		$url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?type={$type}&access_token=$accessToken";

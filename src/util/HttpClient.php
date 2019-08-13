@@ -14,15 +14,23 @@ class HttpClient{
 	private $errNo = null;
 	private $info = null;
 	private $timeout = 1;
+	private $retry = 1;
+	private $tried = 0;
 
-	public function __construct($timeout = 1) {
-		$this->initInstance($timeout);
+	public function __construct($timeout = 1,$retry = 1) {
+		$this->timeout = $timeout;
+		$this->retry = $retry;
+		$this->initInstance();
 	}
 
-	public function initInstance($timeout){
+	public function initInstance(){
 		if(!$this->instance) {
 			$this->instance = curl_init();
-			curl_setopt($this->instance, CURLOPT_TIMEOUT, intval($timeout));
+			if($this->timeout < 1) {
+				curl_setopt($this->instance, CURLOPT_NOSIGNAL,1);
+				curl_setopt($this->instance, CURLOPT_TIMEOUT_MS, $this->timeout * 1000);
+			}else
+				curl_setopt($this->instance, CURLOPT_TIMEOUT, intval($this->timeout));
 			curl_setopt($this->instance, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->instance, CURLOPT_FOLLOWLOCATION, true);
 			curl_setopt($this->instance, CURLOPT_SSL_VERIFYPEER, false);
@@ -56,13 +64,23 @@ class HttpClient{
 	}
 
 	private function execute() {
-		$result = curl_exec($this->instance);
-		$this->errNo = curl_errno($this->instance);
+		do{
+			$result = curl_exec($this->instance);
+			$this->errNo = curl_errno($this->instance);
+		}while(!$result && $this->errNo === CURLE_OPERATION_TIMEDOUT && $this->tried++ < $this->retry);
 		$this->info = curl_getinfo($this->instance);
 		return $result;
 	}
 
 	public function getInfo(){
 		return $this->info;
+	}
+
+	public function getErrorNo(){
+		return $this->errNo;
+	}
+
+	public function getTried(){
+		return $this->tried;
 	}
 }

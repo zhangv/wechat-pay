@@ -2,14 +2,14 @@
 
 //OAuth授权回调
 require_once __DIR__ . "/autoload.php";
-use zhangv\wechat\pay\util\WechatOAuth;
+use zhangv\wechat\pay\util\OAuth;
 
 if (isset($_GET['code'])){
 	$cfg = require './config.php';
 
 	$code = trim($_GET['code']);
 	$state = trim($_GET['state']);
-	$oauth = new WechatOAuth($cfg['app_id'],$cfg['app_secret']);
+	$oauth = new OAuth($cfg['app_id'],$cfg['app_secret']);
 	$at = $oauth->authorize($code);
 
 	if(!$at || empty($at->openid)){

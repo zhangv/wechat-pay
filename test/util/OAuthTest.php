@@ -1,17 +1,17 @@
 <?php
 use zhangv\wechat\pay\util\HttpClient;
-use zhangv\wechat\pay\util\WechatOAuth;
+use zhangv\wechat\pay\util\OAuth;
 use PHPUnit\Framework\TestCase;
 
 class WechatOAuthTest extends TestCase{
 	/** @var HttpClient */
 	private $httpClient;
-	/** @var WechatOAuth */
+	/** @var OAuth */
 	private $wechatOauth;
 
 	public function setUp(){
 		$this->httpClient = $this->createMock(HttpClient::class);
-		$this->wechatOauth = new WechatOAuth('appid','appsecret');
+		$this->wechatOauth = new OAuth('appid','appsecret');
 	}
 
 	/** @test */

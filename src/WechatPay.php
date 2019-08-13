@@ -9,7 +9,7 @@ namespace zhangv\wechat\pay;
 
 use \Exception;
 use zhangv\wechat\pay\util\HttpClient;
-use zhangv\wechat\pay\util\WechatOAuth;
+use zhangv\wechat\pay\util\OAuth;
 use zhangv\wechat\pay\cache\CacheProvider;
 use zhangv\wechat\pay\cache\JsonFileCacheProvider;
 
@@ -96,8 +96,8 @@ class WechatPay {
 	protected $config;
 	/** @var HttpClient */
 	protected $httpClient = null;
-	/** @var WechatOAuth */
-	protected $wechatOAuth = null;
+	/** @var OAuth */
+	protected $oauth = null;
 	/** @var string */
 	public $publicKey = null;
 	/** @var CacheProvider */
@@ -132,15 +132,15 @@ class WechatPay {
 		return self::load($name, ...$config);
 	}
 
-	public function setWechatOAuth($wechatOAuth){
-		$this->wechatOAuth = $wechatOAuth;
+	public function setOAuth($oauth){
+		$this->oauth = $oauth;
 	}
 
-	public function getWechatOAuth(){
-		if(!$this->wechatOAuth){
-			$this->wechatOAuth = new WechatOAuth($this->config['app_id'],$this->config['app_secret']);
+	public function getOAuth(){
+		if(!$this->oauth){
+			$this->oauth = new OAuth($this->config['app_id'],$this->config['app_secret']);
 		}
-		return $this->wechatOAuth;
+		return $this->oauth;
 	}
 
 	public function setConfig($config){
@@ -553,7 +553,7 @@ class WechatPay {
 			}
 		}
 		if(!$ticket){
-			$data = $this->getWechatOAuth()->getTicket();
+			$data = $this->getOAuth()->getTicket();
 			if($cache === true){
 				$this->cacheProvider->set($cacheKey,$data,time() + $data->expires_in);
 			}

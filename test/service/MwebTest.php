@@ -1,7 +1,7 @@
 <?php
 use zhangv\wechat\pay\WechatPay;
 use zhangv\wechat\pay\util\HttpClient;
-use zhangv\wechat\pay\util\WechatOAuth;
+use zhangv\wechat\pay\util\OAuth;
 use PHPUnit\Framework\TestCase;
 
 class MwebTest extends TestCase {
@@ -9,7 +9,7 @@ class MwebTest extends TestCase {
 	private $wechatPay;
 	/** @var HttpClient */
 	private $httpClient;
-	/** @var WechatOAuth */
+	/** @var OAuth */
 	private $wechatOauth;
 
 	public function setUp(){
@@ -31,7 +31,7 @@ class MwebTest extends TestCase {
 		];
 		$this->wechatPay = WechatPay::Mweb($config);
 		$this->httpClient = $this->createMock(HttpClient::class);
-		$this->wechatOauth = $this->createMock(WechatOAuth::class);
+		$this->wechatOauth = $this->createMock(OAuth::class);
 		$this->wechatPay->setCacheProvider(new \zhangv\wechat\pay\cache\JsonFileCacheProvider());
 	}
 

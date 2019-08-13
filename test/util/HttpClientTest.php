@@ -27,4 +27,15 @@ class HttpClientTest extends TestCase{
 		$this->assertNotEquals('POST',$r->method);
 	}
 
+	public function testTimeout(){
+		$c = new HttpClient(0.01,2);
+		$r = $c->get("{$this->endPoint}/delay/1");//timeout
+		$this->assertEquals(28,$c->getErrorNo());
+		$this->assertEquals(3,$c->getTried());
+
+		$c = new HttpClient(2,2);
+		$r = $c->get("{$this->endPoint}/delay/1");//NOT timeout
+		$this->assertEquals(0,$c->getErrorNo());
+		$this->assertEquals(1,$c->getTried());
+	}
 }

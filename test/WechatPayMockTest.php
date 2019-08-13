@@ -2,14 +2,14 @@
 use PHPUnit\Framework\TestCase;
 use zhangv\wechat\pay\WechatPay;
 use zhangv\wechat\pay\util\HttpClient;
-use zhangv\wechat\pay\util\WechatOAuth;
+use zhangv\wechat\pay\util\OAuth;
 
 class WechatPayMockTest extends TestCase{
 	/** @var WechatPay */
 	private $wechatPay;
 	/** @var HttpClient */
 	private $httpClient;
-	/** @var WechatOAuth */
+	/** @var OAuth */
 	private $wechatOauth;
 
 	public function setUp(){
@@ -31,7 +31,7 @@ class WechatPayMockTest extends TestCase{
 		];
 		$this->wechatPay = new WechatPay($config);
 		$this->httpClient = $this->createMock(HttpClient::class);
-		$this->wechatOauth = $this->createMock(WechatOAuth::class);
+		$this->wechatOauth = $this->createMock(OAuth::class);
 		$this->wechatPay->setCacheProvider(new \zhangv\wechat\pay\cache\JsonFileCacheProvider());
 	}
 
@@ -227,14 +227,14 @@ class WechatPayMockTest extends TestCase{
 			"ticket":"bxLdikRXVbTPdHSM05e5u5sUoXNKdvsdshFKA",
 			"expires_in":7200
 			}'));
-		$this->wechatPay->setWechatOAuth($this->wechatOauth);
+		$this->wechatPay->setOAuth($this->wechatOauth);
 		$t = $this->wechatPay->getTicket(true);
 		$this->assertEquals('bxLdikRXVbTPdHSM05e5u5sUoXNKdvsdshFKA',$t);
 		$t = $this->wechatPay->getTicket(true);
 		$this->assertEquals('bxLdikRXVbTPdHSM05e5u5sUoXNKdvsdshFKA',$t);
 		$this->wechatPay->getCacheProvider()->clear('jsapi_ticket');
-		$this->wechatPay->setWechatOAuth(null);
-		$this->wechatPay->getWechatOAuth();
+		$this->wechatPay->setOAuth(null);
+		$this->wechatPay->getOAuth();
 	}
 
 	/** @test */
