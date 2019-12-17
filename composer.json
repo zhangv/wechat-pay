@@ -27,7 +27,7 @@
     "php": ">=7.0",
     "phpunit/phpunit": "^6.5.8",
     "squizlabs/php_codesniffer": "^2.7",
-    "phpmd/phpmd": "^2.4",
+    "phpmd/phpmd": "^2.7",
     "sebastian/phpcpd": "^3.0"
   },
   "autoload": {
