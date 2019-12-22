@@ -64,6 +64,7 @@ class HttpClient{
 	}
 
 	private function execute() {
+		$this->tried = 0;
 		do{
 			$result = curl_exec($this->instance);
 			$this->errNo = curl_errno($this->instance);
