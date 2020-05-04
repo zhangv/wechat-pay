@@ -31,7 +31,7 @@ add:
 in composer.json
 
 ### Demo
-*配置参数
+* 配置参数
 ```php
 $cfg = [
     'mch_id'            => 'XXXX', //商户号
