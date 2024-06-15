@@ -15,5 +15,7 @@ return [
 		'h5_info' => ['type' => 'Wap', 'wap_url' => 'http://wapurl', 'wap_name' => 'wapname']
 	],
 	'rsa_pubkey_path'   => __DIR__ .'/../cert/pubkey.pem',
-	'jsapi_ticket'      => __DIR__ .'/jsapi_ticket.json'
+	'jsapi_ticket'      => __DIR__ .'/jsapi_ticket.json',
+	'request_timeout' => 5, //请求超时时间
+	'cache_provider' => new \zhangv\wechat\pay\cache\JsonFileCacheProvider()
 ];

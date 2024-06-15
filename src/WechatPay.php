@@ -106,9 +106,10 @@ class WechatPay {
 	/**
 	 * @param $config array 配置
 	 */
-	public function __construct(array $config) {
+	public function __construct($config) {
 		$this->config = $config;
-		$this->httpClient = new HttpClient(5);
+		$timeout = (isset($config['request_timeout'])?$config['request_timeout']:3);
+		$this->httpClient = new HttpClient($timeout);
 		$this->cacheProvider = new JsonFileCacheProvider();
 	}
 
@@ -193,8 +194,7 @@ class WechatPay {
 			if(!isset($params['openid'])) throw new Exception('openid is required when trade_type is JSAPI');
 			$data["openid"] = $params['openid'];
 		}
-		$result = $this->post(self::URL_UNIFIEDORDER, $data);
-		return $result;
+		return $this->post(self::URL_UNIFIEDORDER, $data);
 	}
 
 	/**
@@ -207,8 +207,7 @@ class WechatPay {
 		$data = array();
 		$data["appid"] = $this->config["app_id"];
 		$data["transaction_id"] = $transaction_id;
-		$result = $this->post(self::URL_ORDERQUERY, $data);
-		return $result;
+		return $this->post(self::URL_ORDERQUERY, $data);
 	}
 
 	/**

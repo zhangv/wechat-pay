@@ -24,11 +24,10 @@
     "ext-openssl": "*"
   },
   "require-dev": {
-    "php": ">=7.0",
-    "phpunit/phpunit": "^6.5.8",
-    "squizlabs/php_codesniffer": "^2.7",
-    "phpmd/phpmd": "^2.7",
-    "sebastian/phpcpd": "^3.0"
+    "phpunit/phpunit": "^6.5.14",
+    "squizlabs/php_codesniffer": "^2.9.2",
+    "phpmd/phpmd": "^2.9.1",
+    "sebastian/phpcpd": "^3.0.1"
   },
   "autoload": {
     "psr-4": {

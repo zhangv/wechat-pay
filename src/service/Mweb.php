@@ -1,7 +1,10 @@
 <?php
+
 namespace zhangv\wechat\pay\service;
+
 use \zhangv\wechat\pay\WechatPay;
 use \Exception;
+
 /**
  * H5支付
  * @license MIT
@@ -35,18 +38,17 @@ class Mweb extends WechatPay {
 	 * @return string
 	 * @throws Exception
 	 */
-	public function getMwebUrl($body,$out_trade_no,$total_fee,$ext = null){
-		$data = ($ext && is_array($ext))?$ext:array();
+	public function getMwebUrl($body, $out_trade_no, $total_fee, $ext = null) {
+		$data = ($ext && is_array($ext)) ? $ext : array();
 		$data["body"]         = $body;
 		$data["out_trade_no"] = $out_trade_no;
 		$data["total_fee"]    = $total_fee;
-		$data["spbill_create_ip"] = isset($_SERVER["REMOTE_ADDR"])?$_SERVER["REMOTE_ADDR"]:'';
+		$data["spbill_create_ip"] = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '';
 		$data["notify_url"]   = $this->config["notify_url"];
 		$data["trade_type"]   = self::TRADETYPE_MWEB;
-		if(!isset($this->config['h5_scene_info'])) throw new Exception('h5_scene_info should be configured');
+		if (!isset($this->config['h5_scene_info'])) throw new Exception('h5_scene_info should be configured');
 		$data["scene_info"]   = json_encode($this->config['h5_scene_info']);
 		$result = $this->unifiedOrder($data);
-		return $result["mweb_url"];
+		return $result;
 	}
-
 }

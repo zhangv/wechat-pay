@@ -21,14 +21,6 @@
 ```
 composer require zhangv/wechat-pay
 ```
-or
-
-add:
-
-```
-"zhangv/wechat-pay":"1.4.2"
-```
-in composer.json
 
 ### Demo
 * 配置参数
@@ -38,12 +30,12 @@ $cfg = [
     'app_id'            => 'XXXXXXXXXXXXXXXXXXX', //APPID
     'app_secret'        => 'XXXXXXXXXXXXXXXXXXXXXXXXX', //App Secret
     'api_key'           =>'XXXXXXXXXXXXXXXXXXXXXXX', //支付密钥
-    'ssl_cert_path'     => __DIR__ . '/../cert/apiclient_cert.pem',
-    'ssl_key_path'      => __DIR__ .'/../cert/apiclient_key.pem',
+    'ssl_cert_path'     => __DIR__ . '/../cert/apiclient_cert.pem', //SSL证书（通过商户后台下载）
+    'ssl_key_path'      => __DIR__ .'/../cert/apiclient_key.pem', //SSL密钥（通过商户后台下载）
     'sign_type'         => 'MD5',
-    'notify_url'        => 'http://XXX.XXX/paidnotify.php',
-    'refund_notify_url' => 'http://XXX.XXX/refundednotify.php',
-    'h5_scene_info'     => [//required in H5
+    'notify_url'        => 'http://XXX.XXX/paidnotify.php', //支付结果通知地址
+    'refund_notify_url' => 'http://XXX.XXX/refundednotify.php', //退款结果通知地址
+    'h5_scene_info'     => [//H5支付时需要
         'h5_info' => ['type' => 'Wap', 'wap_url' => 'http://wapurl', 'wap_name' => 'wapname']
     ],
     'rsa_pubkey_path'   => __DIR__ .'/../cert/pubkey.pem',
